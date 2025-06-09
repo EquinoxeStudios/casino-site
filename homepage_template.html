@@ -429,11 +429,6 @@
             box-shadow: var(--shadow-md);
         }
 
-        .card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: var(--shadow-xl);
-        }
-
         .card-thumbnail {
             width: 100%;
             aspect-ratio: 3/2;
@@ -523,33 +518,7 @@
             color: white;
             line-height: 1.2;
             text-align: center;
-            margin-bottom: var(--space-xs);
-        }
-
-        .card-provider {
-            font-size: var(--font-xs);
-            color: rgba(255, 255, 255, 0.8);
-            text-align: center;
             margin-bottom: var(--space-sm);
-            font-weight: 500;
-        }
-
-        .card-meta {
-            display: flex;
-            gap: var(--space-xs);
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: var(--space-sm);
-        }
-
-        .card-meta-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: var(--space-3xs) var(--space-xs);
-            border-radius: var(--border-radius-sm);
-            font-size: var(--font-xs);
-            color: rgba(255, 255, 255, 0.9);
-            white-space: nowrap;
-            backdrop-filter: blur(5px);
         }
 
         .card-cta {
@@ -727,15 +696,6 @@
             .card-cta {
                 padding: var(--space-xs) var(--space-sm);
                 font-size: var(--font-xs);
-            }
-
-            .card-meta {
-                justify-content: center;
-            }
-
-            .card-meta-item {
-                font-size: 0.7rem;
-                padding: 2px 4px;
             }
         }
 
@@ -950,18 +910,6 @@
                         <div class="card-overlay">
                             <div class="card-info">
                                 <h3 class="card-title">{{ item.title }}</h3>
-                                <div class="card-provider">by {{ item.provider | default('Unknown Provider') }}</div>
-                                <div class="card-meta">
-                                    {% if item.rtp %}
-                                    <span class="card-meta-item">RTP: {{ item.rtp }}</span>
-                                    {% endif %}
-                                    {% if item.volatility %}
-                                    <span class="card-meta-item">{{ item.volatility }}</span>
-                                    {% endif %}
-                                    {% if item.max_win %}
-                                    <span class="card-meta-item">Max: {{ item.max_win }}</span>
-                                    {% endif %}
-                                </div>
                                 <a href="{{ item.url }}" 
                                    class="card-cta" 
                                    data-game-title="{{ item.title }}"
@@ -1004,18 +952,6 @@
                         <div class="card-overlay">
                             <div class="card-info">
                                 <h3 class="card-title">{{ item.title }}</h3>
-                                <div class="card-provider">by {{ item.provider | default('Unknown Provider') }}</div>
-                                <div class="card-meta">
-                                    {% if item.rtp %}
-                                    <span class="card-meta-item">RTP: {{ item.rtp }}</span>
-                                    {% endif %}
-                                    {% if item.volatility %}
-                                    <span class="card-meta-item">{{ item.volatility }}</span>
-                                    {% endif %}
-                                    {% if item.max_win %}
-                                    <span class="card-meta-item">Max: {{ item.max_win }}</span>
-                                    {% endif %}
-                                </div>
                                 <a href="{{ item.url }}" 
                                    class="card-cta" 
                                    data-game-title="{{ item.title }}"
@@ -1052,6 +988,7 @@
                     <a href="/terms" class="footer-link">Terms & Conditions</a>
                     <a href="/privacy" class="footer-link">Privacy Policy</a>
                     <a href="/cookies" class="footer-link">Cookie Policy</a>
+                    <a href="/responsible-gaming" class="footer-link">Responsible Social Gaming</a>
                 </div>
                 <div class="footer-bottom">
                     <p><strong>{{ footer.disclaimer.title }}:</strong> {{ footer.disclaimer.text }}</p>
