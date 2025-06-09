@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games - {{ site_name }}</title>
+    <!-- Load Font properly -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ primary_font | replace(' ', '+') }}:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Dynamic Brand Colors */
+            --primary-color: {{ colors.primary }};
+            --secondary-color: {{ colors.secondary }};
+            --accent-color: {{ colors.accent }};
+            --background-start: {{ colors.background_start | default('#0a0a0a') }};
+            --background-end: {{ colors.background_end | default('#16213e') }};
+            
+            /* Dynamic Gradients */
+            --primary-gradient: linear-gradient(45deg, {{ colors.primary }}, {{ colors.secondary }});
+            --title-gradient: linear-gradient(45deg, #fff, {{ colors.primary }}, {{ colors.secondary }}, {{ colors.accent }});
+            
+            /* Fluid Typography System */
+            --font-xs: clamp(0.625rem, calc(0.5rem + 0.625vw), 0.875rem);
+            --font-sm: clamp(0.75rem, calc(0.65rem + 0.5vw), 1rem);
+            --font-base: clamp(0.875rem, calc(0.75rem + 0.625vw), 1.125rem);
+            --font-lg: clamp(1rem, calc(0.85rem + 0.75vw), 1.25rem);
+            --font-xl: clamp(1.125rem, calc(0.95rem + 0.875vw), 1.5rem);
+            --font-2xl: clamp(1.25rem, calc(1rem + 1.25vw), 2rem);
+            --font-3xl: clamp(1.5rem, calc(1.25rem + 1.25vw), 2.5rem);
+            --font-4xl: clamp(2rem, calc(1.5rem + 2.5vw), 3.5rem);
+            
+            /* Fluid Spacing System */
+            --space-3xs: clamp(0.25rem, calc(0.2rem + 0.25vw), 0.375rem);
+            --space-2xs: clamp(0.375rem, calc(0.3rem + 0.375vw), 0.5rem);
+            --space-xs: clamp(0.5rem, calc(0.4rem + 0.5vw), 0.75rem);
+            --space-sm: clamp(0.75rem, calc(0.6rem + 0.75vw), 1rem);
+            --space-md: clamp(1rem, calc(0.8rem + 1vw), 1.5rem);
+            --space-lg: clamp(1.5rem, calc(1.2rem + 1.5vw), 2rem);
+            --space-xl: clamp(2rem, calc(1.5rem + 2.5vw), 3rem);
+            --space-2xl: clamp(3rem, calc(2rem + 3vw), 4rem);
+            --space-3xl: clamp(4rem, calc(3rem + 3vw), 6rem);
+            
+            /* Layout System */
+            --sidebar-width: clamp(200px, 20vw, 280px);
+            --sidebar-collapsed: clamp(30px, 5vw, 40px);
+            --container-padding: clamp(1rem, 2.5vw, 2rem);
+            --container-max: min(95vw, 1400px);
+            --content-max: min(90vw, 800px);
+            
+            /* Component Sizing */
+            --card-width: clamp(200px, 20vw, 280px);
+            --card-padding: clamp(1rem, 2vw, 1.5rem);
+            --card-gap: clamp(1rem, 2vw, 1.5rem);
+            --icon-size: clamp(40px, 8vw, 60px);
+            --button-height: clamp(40px, 6vw, 48px);
+            --nav-height: clamp(44px, 8vw, 56px);
+            --touch-target: clamp(44px, 8vw, 56px);
+            
+            /* Border Radius */
+            --border-radius-sm: clamp(4px, 1vw, 8px);
+            --border-radius-md: clamp(8px, 2vw, 12px);
+            --border-radius-lg: clamp(12px, 3vw, 16px);
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+            --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: '{{ primary_font }}', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #fff;
+            background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: var(--font-base);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, {{ colors.sidebar_start | default('#1e1e2e') }} 0%, {{ colors.sidebar_end | default('#2a2a4a') }} 100%);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            transform: translateX(0);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(calc(-1 * var(--sidebar-width) + var(--sidebar-collapsed)));
+        }
+
+        .sidebar-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: var(--font-2xl);
+            font-weight: 800;
+            background: var(--title-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .sidebar-nav {
+            padding: var(--space-sm) 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-md) var(--space-lg);
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: var(--font-base);
+            min-height: var(--nav-height);
+            gap: var(--space-sm);
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-left-color: var(--primary-color);
+            transform: translateX(var(--space-xs));
+        }
+
+        .nav-item i {
+            font-size: var(--font-lg);
+            width: var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            right: calc(-1 * var(--sidebar-collapsed));
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: var(--sidebar-collapsed);
+            height: var(--touch-target);
+            border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-sm);
+        }
+
+        /* Main Wrapper */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+        }
+
+        .main-wrapper.expanded {
+            margin-left: var(--sidebar-collapsed);
+        }
+
+        /* Games Header */
+        .games-header {
+            padding: var(--space-2xl) var(--container-padding) var(--space-xl);
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .games-header h1 {
+            font-size: var(--font-4xl);
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            background: var(--title-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .games-header p {
+            font-size: var(--font-lg);
+            color: rgba(255, 255, 255, 0.7);
+            max-width: var(--content-max);
+            margin: 0 auto var(--space-lg);
+            line-height: 1.6;
+        }
+
+        .games-count {
+            display: inline-block;
+            background: var(--primary-gradient);
+            color: white;
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            font-size: var(--font-sm);
+        }
+
+        /* Games Grid */
+        .games-section {
+            padding: var(--space-2xl) var(--container-padding);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+            gap: var(--card-gap);
+            max-width: var(--container-max);
+            margin: 0 auto;
+        }
+
+        /* Card Styling */
+        .game-card {
+            position: relative;
+            border-radius: var(--border-radius-lg);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            box-shadow: var(--shadow-md);
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .game-thumbnail {
+            width: 100%;
+            aspect-ratio: 3/2;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+        }
+
+        .game-card:hover .game-thumbnail {
+            transform: scale(1.05);
+        }
+
+        .game-thumbnail.loading {
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            position: relative;
+        }
+
+        .game-thumbnail.loading::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .game-thumbnail.error {
+            background: linear-gradient(45deg, #2a1a1a, #3a2a2a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: var(--font-sm);
+            flex-direction: column;
+        }
+
+        .game-thumbnail.error::before {
+            content: '🎰';
+            font-size: var(--font-2xl);
+            margin-bottom: var(--space-xs);
+        }
+
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom, 
+                rgba(0, 0, 0, 0.1) 0%, 
+                rgba(0, 0, 0, 0.7) 100%
+            );
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: var(--space-md);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .game-card:hover .game-overlay {
+            opacity: 1;
+        }
+
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .game-title {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            text-align: center;
+            margin-bottom: var(--space-sm);
+        }
+
+        .game-cta {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            font-size: var(--font-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-cta:hover {
+            background: linear-gradient(45deg, {{ colors.primary_hover | default(colors.primary) }}, {{ colors.secondary_hover | default(colors.secondary) }});
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-cta:active {
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        .footer {
+            background: {{ colors.footer_bg | default('#1e293b') }};
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: var(--space-2xl) var(--container-padding) var(--space-xl);
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: var(--container-max);
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: var(--font-sm);
+            padding: var(--space-xs);
+            min-height: var(--button-height);
+            display: flex;
+            align-items: center;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-color);
+        }
+
+        .footer-bottom {
+            padding-top: var(--space-xl);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: var(--font-sm);
+            line-height: 1.6;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: min(280px, 85vw);
+            }
+            
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 2000;
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+            }
+            
+            .main-wrapper.expanded {
+                margin-left: 0;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .mobile-sidebar-toggle {
+                position: fixed;
+                top: var(--space-md);
+                left: var(--space-md);
+                z-index: 1001;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                color: white;
+                width: var(--touch-target);
+                height: var(--touch-target);
+                border-radius: var(--border-radius-md);
+                cursor: pointer;
+                backdrop-filter: blur(5px);
+                font-size: var(--font-lg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: var(--space-sm);
+            }
+
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 45vw, 200px), 1fr));
+                gap: var(--space-md);
+            }
+
+            .game-overlay {
+                opacity: 1;
+                background: linear-gradient(
+                    to bottom, 
+                    rgba(0, 0, 0, 0.1) 0%, 
+                    rgba(0, 0, 0, 0.6) 100%
+                );
+            }
+
+            .game-title {
+                font-size: var(--font-base);
+            }
+
+            .game-cta {
+                padding: var(--space-xs) var(--space-sm);
+                font-size: var(--font-xs);
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-sidebar-toggle {
+                display: none !important;
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-sidebar-toggle {
+                display: flex;
+            }
+            
+            .sidebar-toggle {
+                display: none;
+            }
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Enhanced Loading States */
+        .game-card.loading {
+            background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Accessibility */
+        .sidebar-toggle:focus-visible,
+        .mobile-sidebar-toggle:focus-visible,
+        .game-card:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">{{ site_name }}</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i> <span>Home</span>
+            </a>
+            <a href="/games" class="nav-item active">
+                <i class="fas fa-gamepad"></i> <span>Games</span>
+            </a>
+            <a href="/about" class="nav-item">
+                <i class="fas fa-info-circle"></i> <span>About Us</span>
+            </a>
+            <a href="/contact" class="nav-item">
+                <i class="fas fa-envelope"></i> <span>Contact Us</span>
+            </a>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </nav>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper" id="mainWrapper">
+
+        <!-- Games Header -->
+        <section class="games-header">
+            <h1>All Games</h1>
+            <p>Explore our complete collection of exciting slot games and casino entertainment</p>
+            <div class="games-count">{{ total_games }} Games Available</div>
+        </section>
+
+        <!-- Games Grid -->
+        <section class="games-section">
+            <div class="games-grid">
+                {% for game in all_games %}
+                <div class="game-card" data-game-slug="{{ game.slug | default(game.url.split('/')[-1] if '/' in game.url else game.url) }}">
+                    <img src="{{ game.image }}" 
+                         alt="{{ game.title }}" 
+                         class="game-thumbnail" 
+                         loading="lazy"
+                         onerror="handleImageError(this)"
+                         onload="handleImageLoad(this)">
+                    <div class="game-overlay">
+                        <div class="game-info">
+                            <h3 class="game-title">{{ game.title }}</h3>
+                            <a href="{{ game.url }}" 
+                               class="game-cta" 
+                               data-game-title="{{ game.title }}"
+                               data-game-provider="{{ game.provider | default('Unknown') }}"
+                               onclick="trackGameClick('{{ game.title }}', '{{ game.url }}', '{{ game.provider | default('Unknown') }}')">
+                               {{ game.cta_text | default('Play Now') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="/terms" class="footer-link">Terms & Conditions</a>
+                    <a href="/privacy" class="footer-link">Privacy Policy</a>
+                    <a href="/cookies" class="footer-link">Cookie Policy</a>
+                    <a href="/responsible-gaming" class="footer-link">Responsible Social Gaming</a>
+                </div>
+                <div class="footer-bottom">
+                    <p><strong>{{ footer.disclaimer.title }}:</strong> {{ footer.disclaimer.text }}</p>
+                    <p>&copy; {{ footer.copyright_year }} {{ footer.domain_name }}. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainWrapper = document.getElementById('mainWrapper');
+            const toggleBtn = document.querySelector('.sidebar-toggle i');
+            
+            sidebar.classList.toggle('collapsed');
+            mainWrapper.classList.toggle('expanded');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                toggleBtn.className = 'fas fa-chevron-right';
+            } else {
+                toggleBtn.className = 'fas fa-chevron-left';
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.getElementById('mobileSidebarToggle');
+            
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+            
+            const isOpen = sidebar.classList.contains('mobile-open');
+            toggleBtn.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+            
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.getElementById('mobileSidebarToggle');
+            
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            toggleBtn.setAttribute('aria-label', 'Open menu');
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeMobileSidebar();
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize image loading states
+            initializeImageLoading();
+            
+            // Log that we're using SlotsLaunch games
+            console.log('🎰 Games page powered by SlotsLaunch API - Real casino games loaded!');
+        });
+
+        // Enhanced image handling functions
+        function handleImageLoad(img) {
+            img.classList.remove('loading', 'error');
+            
+            // Add loading success animation
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.style.transition = 'opacity 0.3s ease';
+                img.style.opacity = '1';
+            }, 50);
+        }
+
+        function handleImageError(img) {
+            img.classList.remove('loading');
+            img.classList.add('error');
+            
+            // Try to load a fallback image based on game type
+            if (!img.dataset.fallbackAttempted) {
+                img.dataset.fallbackAttempted = 'true';
+                
+                // Generate a fallback image URL
+                const gameTitle = img.alt || 'Slot Game';
+                const fallbackUrl = generateFallbackImage(gameTitle);
+                
+                if (fallbackUrl !== img.src) {
+                    img.src = fallbackUrl;
+                    return;
+                }
+            }
+            
+            // If fallback also fails, show styled error state
+            img.style.display = 'flex';
+            img.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.6); text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🎰</div><div style="font-size: 0.8rem;">Game Image</div></div>';
+        }
+
+        function generateFallbackImage(gameTitle) {
+            // Generate a themed fallback based on game title
+            const seedValue = gameTitle.toLowerCase().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const imageId = 1500000000 + (seedValue % 1000);
+            return `https://images.unsplash.com/photo-${imageId}?w=400&h=267&fit=crop&auto=format`;
+        }
+
+        function initializeImageLoading() {
+            // Add loading class to all images initially
+            document.querySelectorAll('.game-thumbnail').forEach(img => {
+                if (!img.complete) {
+                    img.classList.add('loading');
+                }
+            });
+        }
+
+        function trackGameClick(gameTitle, gameUrl, gameProvider) {
+            // Enhanced analytics tracking for game clicks
+            console.log(`🎮 Game clicked: ${gameTitle} by ${gameProvider} (${gameUrl})`);
+            
+            // Track with multiple analytics services
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'game_click', {
+                    'game_title': gameTitle,
+                    'game_provider': gameProvider,
+                    'game_url': gameUrl,
+                    'event_category': 'games',
+                    'event_label': `${gameTitle} - ${gameProvider}`
+                });
+            }
+            
+            // Facebook Pixel tracking
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'ViewContent', {
+                    content_name: gameTitle,
+                    content_category: 'game',
+                    content_type: 'casino_game'
+                });
+            }
+            
+            // Add visual feedback
+            const clickedElement = event.target;
+            clickedElement.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                clickedElement.style.transform = '';
+            }, 150);
+            
+            // Show loading state briefly
+            const card = clickedElement.closest('.game-card');
+            if (card) {
+                card.classList.add('loading');
+                setTimeout(() => {
+                    card.classList.remove('loading');
+                }, 800);
+            }
+        }
+
+        // Add performance monitoring
+        window.addEventListener('load', () => {
+            console.log('🚀 Games page fully loaded and optimized!');
+            console.log('💎 All games fetched from SlotsLaunch API');
+            
+            // Report loading performance
+            if ('performance' in window) {
+                const loadTime = Math.round(performance.now());
+                console.log(`⚡ Load time: ${loadTime}ms`);
+            }
+        });
+    </script>
+</body>
+</html>

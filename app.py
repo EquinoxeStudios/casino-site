@@ -107,8 +107,8 @@ class DynamicWebsiteGenerator:
     
     def select_theme_font(self, chosen_theme):
         """Select appropriate font based on theme"""
-        theme_name = chosen_theme['name'].lower()
-        theme_desc = chosen_theme['description'].lower()
+        theme_name = chosen_theme.get('name', '').lower()
+        theme_desc = chosen_theme.get('description', '').lower()
         
         # Egyptian/Ancient themes
         if any(word in theme_name + theme_desc for word in ['egypt', 'pharaoh', 'pyramid', 'ancient', 'temple', 'hieroglyph']):
@@ -267,6 +267,47 @@ class DynamicWebsiteGenerator:
             print("🔄 Using fallback games instead...")
             return self.get_fallback_games(count)
     
+    def fetch_additional_games(self, count=10, existing_games=None):
+        """Fetch additional games for the games page, avoiding duplicates"""
+        print(f"🎮 Fetching {count} additional games for games page...")
+        
+        # Get existing game slugs to avoid duplicates
+        existing_slugs = set()
+        if existing_games:
+            for game in existing_games:
+                if game.get('slug'):
+                    existing_slugs.add(game['slug'])
+        
+        # Fetch more games than needed to account for filtering
+        additional_games = self.fetch_slotslaunch_games(count * 2)
+        
+        # Filter out duplicates
+        unique_games = []
+        for game in additional_games:
+            if game.get('slug') not in existing_slugs:
+                unique_games.append(game)
+                existing_slugs.add(game['slug'])
+                
+                if len(unique_games) >= count:
+                    break
+        
+        # If we don't have enough unique games, add fallback games
+        if len(unique_games) < count:
+            print(f"⚠️ Only found {len(unique_games)} unique games, adding fallback games...")
+            fallback_games = self.get_fallback_games(count * 2)  # Get more fallback games
+            
+            # Filter fallback games to avoid duplicates
+            for game in fallback_games:
+                if game.get('slug') not in existing_slugs:
+                    unique_games.append(game)
+                    existing_slugs.add(game['slug'])
+                    
+                    if len(unique_games) >= count:
+                        break
+        
+        print(f"✅ Found {len(unique_games)} additional unique games")
+        return unique_games[:count]
+    
     def generate_fallback_image_url(self, game_title):
         """Generate a themed fallback image URL based on game title"""
         # Use Unsplash with themed searches based on game title
@@ -398,6 +439,62 @@ class DynamicWebsiteGenerator:
                 "image": "images/games/mystical-forest.jpg",  # Local image
                 "slug": "mystical-forest",
                 "game_id": "mystical-forest"
+            },
+            {
+                "title": "Crystal Palace",
+                "url": "/games/crystal-palace",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/crystal-palace.jpg",  # Local image
+                "slug": "crystal-palace",
+                "game_id": "crystal-palace"
+            },
+            {
+                "title": "Pirate's Treasure",
+                "url": "/games/pirates-treasure",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/pirates-treasure.jpg",  # Local image
+                "slug": "pirates-treasure",
+                "game_id": "pirates-treasure"
+            },
+            {
+                "title": "Aztec Gold",
+                "url": "/games/aztec-gold",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/aztec-gold.jpg",  # Local image
+                "slug": "aztec-gold",
+                "game_id": "aztec-gold"
+            },
+            {
+                "title": "Lucky Leprechaun",
+                "url": "/games/lucky-leprechaun",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/lucky-leprechaun.jpg",  # Local image
+                "slug": "lucky-leprechaun",
+                "game_id": "lucky-leprechaun"
+            },
+            {
+                "title": "Neon Nights",
+                "url": "/games/neon-nights",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/neon-nights.jpg",  # Local image
+                "slug": "neon-nights",
+                "game_id": "neon-nights"
+            },
+            {
+                "title": "Jungle Explorer",
+                "url": "/games/jungle-explorer",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/jungle-explorer.jpg",  # Local image
+                "slug": "jungle-explorer",
+                "game_id": "jungle-explorer"
+            },
+            {
+                "title": "Royal Crown",
+                "url": "/games/royal-crown",  # Local game page URL
+                "cta_text": "Play Now",
+                "image": "images/games/royal-crown.jpg",  # Local image
+                "slug": "royal-crown",
+                "game_id": "royal-crown"
             }
         ]
         
@@ -887,6 +984,41 @@ Return exactly this JSON structure:
             }
         }
     
+    def build_games_page_data(self, site_name, domain_name, colors, all_games, content):
+        """Build games page data structure"""
+        selected_font = self.select_theme_font({'name': '', 'description': ''})  # Use default font for games page
+        
+        return {
+            'site_name': site_name,
+            'primary_font': selected_font,
+            
+            'colors': {
+                'primary': colors['primary_color'],
+                'secondary': colors['secondary_color'],
+                'accent': colors['accent_color'],
+                'background_start': colors.get('background_start', '#0a0a0a'),
+                'background_end': colors.get('background_end', '#16213e'),
+                'primary_hover': colors.get('primary_hover', colors['primary_color']),
+                'secondary_hover': colors.get('secondary_hover', colors['secondary_color']),
+                'sidebar_start': colors.get('sidebar_start', '#1e1e2e'),
+                'sidebar_end': colors.get('sidebar_end', '#2a2a4a'),
+                'footer_bg': colors.get('footer_bg', '#1e293b'),
+            },
+            
+            'all_games': all_games,
+            'total_games': len(all_games),
+            
+            'footer': {
+                'disclaimer': {
+                    'title': 'Disclaimer',
+                    'text': content['disclaimer']
+                },
+                'copyright_year': datetime.now().year,
+                'domain_name': domain_name,
+                'additional_text': ''
+            }
+        }
+    
     def render_website(self, website_data, template_path):
         """Render the final HTML using Jinja2 template"""
         try:
@@ -898,19 +1030,28 @@ Return exactly this JSON structure:
             template = Template(template_content)
             
             # Debug: Print data structure
-            print(f"🔍 Rendering with {len(website_data['content_sections'])} sections")
-            for i, section in enumerate(website_data['content_sections']):
-                section_name = "Featured Games" if i == 0 else "New Arrivals"
-                print(f"   Section {i}: {section_name} with {len(section['items'])} items")
-                # Show sample games
-                for j, game in enumerate(section['items'][:2]):
-                    print(f"      Game {j+1}: {game['title']} - {game['url']}")
+            if 'content_sections' in website_data:
+                print(f"🔍 Rendering homepage with {len(website_data['content_sections'])} sections")
+                for i, section in enumerate(website_data['content_sections']):
+                    section_name = "Featured Games" if i == 0 else "New Arrivals"
+                    print(f"   Section {i}: {section_name} with {len(section['items'])} items")
+                    # Show sample games
+                    for j, game in enumerate(section['items'][:2]):
+                        print(f"      Game {j+1}: {game['title']} - {game['url']}")
+            elif 'all_games' in website_data:
+                print(f"🔍 Rendering games page with {len(website_data['all_games'])} games")
+                for j, game in enumerate(website_data['all_games'][:3]):
+                    print(f"   Game {j+1}: {game['title']} - {game['url']}")
             
             # Render HTML
             html_output = template.render(**website_data)
             
             # Save to output directory
-            output_filename = f"{website_data['site_name'].lower().replace(' ', '-')}-website.html"
+            if 'content_sections' in website_data:
+                output_filename = f"{website_data['site_name'].lower().replace(' ', '-')}-website.html"
+            else:
+                output_filename = f"{website_data['site_name'].lower().replace(' ', '-')}-games.html"
+            
             output_path = self.output_dir / output_filename
             
             with open(output_path, 'w', encoding='utf-8') as f:
@@ -928,7 +1069,7 @@ Return exactly this JSON structure:
             return None
     
     def generate_complete_website(self, domain_name):
-        """Complete workflow to generate website"""
+        """Complete workflow to generate website and games page"""
         print(f"🚀 Starting website generation for: {domain_name}")
         print("=" * 50)
         
@@ -986,33 +1127,54 @@ Return exactly this JSON structure:
         print(f"🖼️  Generating hero image...")
         hero_image = self.generate_hero_image(chosen_theme, site_name)
         
-        # Step 6: Build complete data structure
-        print(f"🏗️  Building website data...")
+        # Step 6: Build complete homepage data structure
+        print(f"🏗️  Building homepage data...")
         selected_font = self.select_theme_font(chosen_theme)
         print(f"🔤 Selected font: {selected_font}")
         website_data = self.build_website_data(site_name, domain_name, chosen_theme, colors, content, hero_image)
         
-        # Step 7: Render website
-        print(f"🎯 Rendering website...")
+        # Step 7: Render homepage
+        print(f"🎯 Rendering homepage...")
         template_path = "homepage_template.html"
-        output_path = self.render_website(website_data, template_path)
+        homepage_path = self.render_website(website_data, template_path)
         
-        if output_path:
+        # Step 8: Fetch additional games for games page
+        print(f"🎮 Fetching additional games for games page...")
+        homepage_games = content['sections'][0]['items'] + content['sections'][1]['items']
+        additional_games = self.fetch_additional_games(10, homepage_games)
+        all_games = homepage_games + additional_games
+        
+        print(f"📊 Games Summary:")
+        print(f"   Homepage games: {len(homepage_games)}")
+        print(f"   Additional games: {len(additional_games)}")
+        print(f"   Total games: {len(all_games)}")
+        
+        # Step 9: Build games page data structure
+        print(f"🏗️  Building games page data...")
+        games_data = self.build_games_page_data(site_name, domain_name, colors, all_games, content)
+        
+        # Step 10: Render games page
+        print(f"🎯 Rendering games page...")
+        games_template_path = "games_template.html"
+        games_path = self.render_website(games_data, games_template_path)
+        
+        if homepage_path and games_path:
             print("\n" + "=" * 50)
             print("🎉 Website Generated Successfully!")
             print("=" * 50)
-            print(f"📁 Output file: {output_path}")
+            print(f"📁 Homepage file: {homepage_path}")
+            print(f"📁 Games page file: {games_path}")
             print(f"📂 Images saved to: {self.images_dir}")
             print(f"🎨 Primary color: {colors['primary_color']}")
             print(f"🎭 Theme: {chosen_theme['name']}")
             print(f"🏠 Hero title: {content['hero_title']}")
             print(f"🖼️  Hero image: {hero_image}")
-            print(f"🎮 Games: Downloaded locally from SlotsLaunch API")
+            print(f"🎮 Total games: {len(all_games)} (Homepage: {len(homepage_games)}, Additional: {len(additional_games)})")
             print("=" * 50)
-            return output_path
+            return homepage_path, games_path
         else:
             print("❌ Failed to generate website")
-            return None
+            return None, None
 
 
 def main():
@@ -1046,16 +1208,17 @@ def main():
         generator = DynamicWebsiteGenerator(api_key)
         
         # Generate website
-        output_path = generator.generate_complete_website(domain)
+        homepage_path, games_path = generator.generate_complete_website(domain)
         
-        if output_path:
+        if homepage_path and games_path:
             print(f"\n🎯 Next steps:")
-            print(f"1. Open {output_path} in your browser")
-            print(f"2. Copy the hero image to the same folder as the HTML file")
-            print(f"3. Copy the 'images' folder to the same location as the HTML file")
-            print(f"4. Game thumbnails are saved locally in '{generator.images_dir}'")
-            print(f"5. Game links point to /games/[slug] pages")
-            print(f"6. Customize further if needed")
+            print(f"1. Open {homepage_path} in your browser")
+            print(f"2. Open {games_path} in your browser")
+            print(f"3. Copy the hero image to the same folder as the HTML files")
+            print(f"4. Copy the 'images' folder to the same location as the HTML files")
+            print(f"5. Game thumbnails are saved locally in '{generator.images_dir}'")
+            print(f"6. Game links point to /games/[slug] pages")
+            print(f"7. Customize further if needed")
             print("\n✨ Happy website building!")
         
     except openai.AuthenticationError:
