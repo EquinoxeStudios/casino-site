@@ -994,7 +994,7 @@ Return exactly this JSON structure:
         
         # Step 7: Render website
         print(f"🎯 Rendering website...")
-        template_path = "dynamic_template.html"
+        template_path = "homepage_template.html"
         output_path = self.render_website(website_data, template_path)
         
         if output_path:
