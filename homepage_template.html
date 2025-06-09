@@ -790,51 +790,6 @@
                 transition-duration: 0.01ms !important;
             }
         }
-
-        /* Game Provider Badge */
-        .provider-badge {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
-            padding: var(--space-3xs) var(--space-xs);
-            border-radius: var(--border-radius-sm);
-            font-size: var(--font-xs);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            position: absolute;
-            top: var(--space-sm);
-            left: var(--space-sm);
-            backdrop-filter: blur(5px);
-        }
-
-        /* Real Game Indicator */
-        .real-game-indicator {
-            position: absolute;
-            bottom: var(--space-sm);
-            left: var(--space-sm);
-            background: linear-gradient(45deg, #10b981, #059669);
-            color: white;
-            padding: var(--space-3xs) var(--space-xs);
-            border-radius: var(--border-radius-sm);
-            font-size: var(--font-xs);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: var(--space-3xs);
-        }
-
-        .real-game-indicator::before {
-            content: '●';
-            color: #34d399;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
     </style>
 </head>
 <body>
@@ -899,8 +854,6 @@
                 <div class="cards-slider" id="section0Slider">
                     {% for item in content_sections[0]["items"] %}
                     <div class="card" data-game-slug="{{ item.slug | default(item.url.split('/')[-1] if '/' in item.url else item.url) }}">
-                        <div class="provider-badge">{{ item.provider | default('Provider') }}</div>
-                        <div class="real-game-indicator">Live</div>
                         <img src="{{ item.image }}" 
                              alt="{{ item.title }}" 
                              class="card-thumbnail" 
@@ -941,8 +894,6 @@
                 <div class="cards-slider" id="section1Slider">
                     {% for item in content_sections[1]["items"] %}
                     <div class="card" data-game-slug="{{ item.slug | default(item.url.split('/')[-1] if '/' in item.url else item.url) }}">
-                        <div class="provider-badge">{{ item.provider | default('Provider') }}</div>
-                        <div class="real-game-indicator">Live</div>
                         <img src="{{ item.image }}" 
                              alt="{{ item.title }}" 
                              class="card-thumbnail" 
