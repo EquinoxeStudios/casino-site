@@ -2626,22 +2626,18 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         with open(template_filename, 'r', encoding='utf-8') as f:
             template_content = f.read()
         
-        # Update template to use external CSS/JS files
-        template_updates = {
-            '<style>.*?</style>': '',  # Remove inline styles
-            '<script>.*?</script>': '',  # Remove inline scripts
-            '</head>': self._get_head_includes(output_filename) + '\n</head>',
-            '</body>': self._get_body_scripts(output_filename) + '\n</body>'
-        }
-        
-        for pattern, replacement in template_updates.items():
-            if pattern.startswith('<style>') or pattern.startswith('<script>'):
-                template_content = re.sub(pattern, replacement, template_content, flags=re.DOTALL)
-            else:
-                template_content = template_content.replace(pattern, replacement)
-        
+        # Render the template with data first
         template = Template(template_content)
         html_output = template.render(**data)
+        
+        # Now inject CSS and JS into the rendered HTML
+        # Find the closing </head> tag and insert CSS links before it
+        css_includes = self._get_head_includes(output_filename)
+        html_output = html_output.replace('</head>', f'{css_includes}\n</head>')
+        
+        # Find the closing </body> tag and insert JS scripts before it
+        js_includes = self._get_body_scripts(output_filename)
+        html_output = html_output.replace('</body>', f'{js_includes}\n</body>')
         
         output_path = self.output_dir / output_filename
         
@@ -2653,54 +2649,51 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         
         self.log_debug(f"Template rendered successfully: {output_path}")
         return output_path
-    
+
     def _get_head_includes(self, filename):
         """Get CSS includes based on the page type"""
-        includes = [
-            '<link rel="stylesheet" href="../assets/css/base.css">'
-        ]
-        
-        # Determine relative path based on file location
-        if '/' in filename:
+        # Determine the path prefix based on file location
+        if filename.startswith('pages/'):
+            path_prefix = '../'
+        elif filename.startswith('games/'):
             path_prefix = '../'
         else:
-            path_prefix = 'assets/'
+            path_prefix = ''
         
-        # Update includes with correct path
-        includes = [inc.replace('../assets/', path_prefix + 'assets/') for inc in includes]
+        includes = [f'    <link rel="stylesheet" href="{path_prefix}assets/css/base.css">']
         
-        # Add page-specific CSS
+        # Add page-specific CSS based on filename
         if 'homepage' in filename:
-            includes.append(f'<link rel="stylesheet" href="{path_prefix}assets/css/homepage.css">')
-        elif 'games.html' in filename and 'games/' not in filename:
-            includes.append(f'<link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
-        elif 'games/' in filename:
-            includes.append(f'<link rel="stylesheet" href="../{path_prefix}assets/css/game.css">')
-        elif any(legal in filename for legal in ['terms', 'privacy', 'cookies', 'responsible']):
-            includes.append(f'<link rel="stylesheet" href="../{path_prefix}assets/css/legal.css">')
+            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/homepage.css">')
+        elif filename.endswith('games.html') and 'games/' not in filename:
+            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
+        elif filename.startswith('games/'):
+            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/game.css">')
+        elif any(page in filename for page in ['terms', 'privacy', 'cookies', 'responsible']):
+            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/legal.css">')
         
-        return '\n    '.join(includes)
-    
+        return '\n'.join(includes)
+
     def _get_body_scripts(self, filename):
         """Get JS includes based on the page type"""
-        # Determine relative path based on file location
-        if '/' in filename:
+        # Determine the path prefix based on file location
+        if filename.startswith('pages/'):
+            path_prefix = '../'
+        elif filename.startswith('games/'):
             path_prefix = '../'
         else:
-            path_prefix = 'assets/'
+            path_prefix = ''
         
-        scripts = [
-            f'<script src="{path_prefix}assets/js/base.js"></script>'
-        ]
+        scripts = [f'    <script src="{path_prefix}assets/js/base.js"></script>']
         
-        # Add page-specific JS
+        # Add page-specific JS based on filename
         if 'homepage' in filename:
-            scripts.append(f'<script src="{path_prefix}assets/js/homepage.js"></script>')
-        elif 'games/' in filename:
-            scripts.append(f'<script src="../{path_prefix}assets/js/game.js"></script>')
+            scripts.append(f'    <script src="{path_prefix}assets/js/homepage.js"></script>')
+        elif filename.startswith('games/'):
+            scripts.append(f'    <script src="{path_prefix}assets/js/game.js"></script>')
         
-        return '\n    '.join(scripts)
-    
+        return '\n'.join(scripts)
+
     def generate_complete_website(self, domain_name):
         """Generate complete website with all pages"""
         print(f"🚀 Starting complete website generation for: {domain_name}")
