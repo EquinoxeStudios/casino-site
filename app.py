@@ -11,6 +11,8 @@ import random
 import time
 from urllib.parse import urlparse
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 class CompleteWebsiteGenerator:
     def __init__(self, openai_api_key):
@@ -34,9 +36,13 @@ class CompleteWebsiteGenerator:
         self.slotslaunch_base_url = "https://slotslaunch.com/api"
         self.default_domain = "spikeup.com"  # Whitelisted domain
         self.last_api_call = 0
+        self.api_lock = threading.Lock()
         
         # Debug mode
         self.debug = True
+        
+        # Thread pool for concurrent downloads
+        self.download_executor = ThreadPoolExecutor(max_workers=10)
         
         print(f"🔧 Complete Website Generator Initialized")
         print(f"📁 Output directory: {self.output_dir}")
@@ -71,7 +77,7 @@ class CompleteWebsiteGenerator:
             content_type = response.headers.get('content-type', '').lower()
             if not any(img_type in content_type for img_type in ['image/', 'jpeg', 'jpg', 'png', 'webp']):
                 self.log_debug(f"Invalid content type for {filename}: {content_type}")
-                return self.get_fallback_image_path(filename)
+                return None
             
             with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -82,11 +88,29 @@ class CompleteWebsiteGenerator:
             
         except Exception as e:
             self.log_debug(f"Failed to download {filename}: {e}")
-            return self.get_fallback_image_path(filename)
+            return None
     
-    def get_fallback_image_path(self, filename):
-        """Generate fallback image path for failed downloads"""
-        return f"images/games/placeholder.jpg"
+    def download_images_concurrently(self, image_tasks):
+        """Download multiple images concurrently for faster processing"""
+        results = {}
+        futures = {}
+        
+        # Submit all download tasks
+        for game_id, (image_url, filename) in image_tasks.items():
+            future = self.download_executor.submit(self.download_image, image_url, filename)
+            futures[future] = game_id
+        
+        # Collect results as they complete
+        for future in as_completed(futures):
+            game_id = futures[future]
+            try:
+                result = future.result()
+                results[game_id] = result
+            except Exception as e:
+                self.log_debug(f"Error downloading image for game {game_id}: {e}")
+                results[game_id] = None
+        
+        return results
     
     def sanitize_filename(self, name):
         """Sanitize filename for safe file system usage"""
@@ -97,15 +121,16 @@ class CompleteWebsiteGenerator:
     
     def respect_rate_limit(self):
         """Implement rate limiting for SlotsLaunch API"""
-        min_interval = 1.5  
-        time_since_last = time.time() - self.last_api_call
-        
-        if time_since_last < min_interval:
-            sleep_time = min_interval - time_since_last
-            self.log_debug(f"Rate limiting: waiting {sleep_time:.1f}s...")
-            time.sleep(sleep_time)
-        
-        self.last_api_call = time.time()
+        with self.api_lock:
+            min_interval = 1.5  
+            time_since_last = time.time() - self.last_api_call
+            
+            if time_since_last < min_interval:
+                sleep_time = min_interval - time_since_last
+                self.log_debug(f"Rate limiting: waiting {sleep_time:.1f}s...")
+                time.sleep(sleep_time)
+            
+            self.last_api_call = time.time()
     
     def get_slotslaunch_game_url(self, game_id, domain_name="spikeup.com"):
         """Get iframe URL for a specific game from SlotsLaunch"""
@@ -162,17 +187,10 @@ class CompleteWebsiteGenerator:
             'cta_text': 'Play Now',
             'game_id': game.get('id', game['slug']),
             'provider': game.get('provider', 'Unknown'),
-            'description': game.get('description', '')
+            'description': game.get('description', ''),
+            'image': None,  # Will be set after concurrent download
+            'image_url': game.get('thumb') or game.get('image') or game.get('thumbnail')
         }
-        
-        # Handle image
-        image_url = game.get('thumb') or game.get('image') or game.get('thumbnail')
-        if image_url:
-            image_filename = f"{self.sanitize_filename(game['slug'])}.jpg"
-            local_image_path = self.download_image(image_url, image_filename)
-            validated_game['image'] = local_image_path
-        else:
-            validated_game['image'] = self.generate_fallback_image_url(validated_game['title'])
         
         # Get iframe URL
         iframe_url = self.get_slotslaunch_game_url(validated_game['game_id'])
@@ -185,7 +203,7 @@ class CompleteWebsiteGenerator:
         return validated_game
     
     def fetch_slotslaunch_games(self, count=10):
-        """Fetch games from SlotsLaunch API with enhanced error handling"""
+        """Fetch games from SlotsLaunch API with enhanced error handling and concurrent image downloads"""
         try:
             self.log_debug(f"Fetching {count} games from SlotsLaunch API...")
             
@@ -222,8 +240,8 @@ class CompleteWebsiteGenerator:
                 self.log_debug(f"API Meta: {total_games} total games across {last_page} pages")
                 
                 if last_page == 0 or total_games == 0:
-                    self.log_debug("No games found from API, using fallback")
-                    return self.get_fallback_games(count)
+                    self.log_debug("No games found from API")
+                    return []
                 
                 all_games = []
                 pages_to_fetch = min(3, last_page)
@@ -262,118 +280,121 @@ class CompleteWebsiteGenerator:
                 if len(all_games) > count:
                     all_games = random.sample(all_games, count)
                 
+                # Download images concurrently
+                self.log_debug(f"Downloading images for {len(all_games)} games concurrently...")
+                image_tasks = {}
+                for game in all_games:
+                    if game['image_url']:
+                        image_filename = f"{self.sanitize_filename(game['slug'])}.jpg"
+                        image_tasks[game['slug']] = (game['image_url'], image_filename)
+                
+                image_results = self.download_images_concurrently(image_tasks)
+                
+                # Update games with downloaded image paths
+                for game in all_games:
+                    if game['slug'] in image_results and image_results[game['slug']]:
+                        game['image'] = image_results[game['slug']]
+                    else:
+                        game['image'] = self.generate_placeholder_image_path()
+                    # Remove temporary image_url field
+                    game.pop('image_url', None)
+                
                 self.log_debug(f"Successfully processed {len(all_games)} valid games")
-                return all_games if all_games else self.get_fallback_games(count)
+                return all_games
                 
             else:
                 self.log_debug(f"API Error {response.status_code}: {response.text[:200]}")
-                return self.get_fallback_games(count)
+                return []
                 
         except Exception as e:
             self.log_debug(f"Exception fetching games: {e}")
             traceback.print_exc()
-            return self.get_fallback_games(count)
+            return []
     
-    def get_fallback_games(self, count=10):
-        """Enhanced fallback games with iframe URLs"""
-        self.log_debug(f"Using {count} fallback games...")
+    def generate_placeholder_image_path(self):
+        """Generate a placeholder image path"""
+        return "images/games/placeholder.jpg"
+    
+    def generate_hero_image(self, chosen_theme, site_name):
+        """Generate a hero image based on the theme using GPT and download it"""
+        prompt = f"""Generate a URL for a high-quality hero background image for a social casino website.
+
+Theme: {chosen_theme['name']}
+Description: {chosen_theme['description']}
+Mood: {', '.join(chosen_theme['mood'])}
+
+I need a direct URL to a free stock photo that matches this theme.
+Consider using Unsplash, Pexels, or Pixabay URLs.
+The image should be casino/gaming themed, high quality, and suitable as a hero background.
+
+Return ONLY the direct image URL, nothing else."""
         
-        fallback_games = [
-            {
-                "title": "Golden Pharaoh's Fortune",
-                "url": "/games/golden-pharaoh",
-                "cta_text": "Play Now",
-                "image": "images/games/golden-pharaoh.jpg",
-                "slug": "golden-pharaoh",
-                "game_id": "golden-pharaoh",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/golden-pharaoh",
-                "description": "Discover ancient Egyptian treasures in this exciting slot adventure."
-            },
-            {
-                "title": "Diamond Destiny",
-                "url": "/games/diamond-destiny",
-                "cta_text": "Play Now",
-                "image": "images/games/diamond-destiny.jpg",
-                "slug": "diamond-destiny",
-                "game_id": "diamond-destiny",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/diamond-destiny",
-                "description": "Sparkle with precious gems and unlock your diamond destiny."
-            },
-            {
-                "title": "Vegas Lightning",
-                "url": "/games/vegas-lightning",
-                "cta_text": "Play Now",
-                "image": "images/games/vegas-lightning.jpg",
-                "slug": "vegas-lightning",
-                "game_id": "vegas-lightning",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/vegas-lightning",
-                "description": "Experience the electric excitement of Las Vegas."
-            },
-            {
-                "title": "Dragon's Fire",
-                "url": "/games/dragons-fire",
-                "cta_text": "Play Now",
-                "image": "images/games/dragons-fire.jpg",
-                "slug": "dragons-fire",
-                "game_id": "dragons-fire",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/dragons-fire",
-                "description": "Brave the dragon's lair for legendary treasures."
-            },
-            {
-                "title": "Ocean Treasures",
-                "url": "/games/ocean-treasures",
-                "cta_text": "Play Now",
-                "image": "images/games/ocean-treasures.jpg",
-                "slug": "ocean-treasures",
-                "game_id": "ocean-treasures",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/ocean-treasures",
-                "description": "Dive deep for underwater riches and marine mysteries."
-            },
-            {
-                "title": "Wild West Gold Rush",
-                "url": "/games/wild-west-gold",
-                "cta_text": "Play Now",
-                "image": "images/games/wild-west-gold.jpg",
-                "slug": "wild-west-gold",
-                "game_id": "wild-west-gold",
-                "provider": "Featured",
-                "iframe_url": "https://demo.slotslaunch.com/game/wild-west-gold",
-                "description": "Strike it rich in the lawless frontier."
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are an image URL generator. Return only direct image URLs."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=200
+            )
+            
+            image_url = response.choices[0].message.content.strip()
+            
+            # Validate it's a URL
+            if not image_url.startswith('http'):
+                raise ValueError("Invalid URL format")
+            
+            # Download the hero image
+            hero_filename = "hero-bg.jpg"
+            hero_path = self.output_dir / hero_filename
+            
+            self.log_debug(f"Downloading hero image from: {image_url}")
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
-        ]
-        
-        # Download fallback images if needed
-        for game in fallback_games[:count]:
-            if game['image'].startswith('images/'):
-                image_filename = game['image'].split('/')[-1]
-                image_path = self.images_dir / image_filename
-                if not image_path.exists():
-                    fallback_url = self.generate_fallback_image_url(game['title'])
-                    downloaded_path = self.download_image(fallback_url, image_filename)
-                    if downloaded_path:
-                        game['image'] = downloaded_path
-        
-        return fallback_games[:count]
+            
+            img_response = requests.get(image_url, timeout=15, headers=headers)
+            img_response.raise_for_status()
+            
+            with open(hero_path, 'wb') as f:
+                f.write(img_response.content)
+            
+            self.log_debug(f"Hero image saved: {hero_filename}")
+            return hero_filename
+            
+        except Exception as e:
+            self.log_debug(f"Error generating/downloading hero image: {e}")
+            # Generate a themed fallback URL based on the theme
+            return self.get_themed_hero_fallback(chosen_theme)
     
-    def generate_fallback_image_url(self, game_title):
-        """Generate a themed fallback image URL based on game title"""
-        title_lower = game_title.lower()
+    def get_themed_hero_fallback(self, chosen_theme):
+        """Get a themed fallback hero image URL based on theme characteristics"""
+        theme_name = chosen_theme.get('name', '').lower()
+        theme_desc = chosen_theme.get('description', '').lower()
         
-        if any(word in title_lower for word in ['gold', 'treasure', 'pharaoh', 'egypt']):
-            return "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=267&fit=crop"
-        elif any(word in title_lower for word in ['diamond', 'crystal', 'gem']):
-            return "https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=400&h=267&fit=crop"
-        elif any(word in title_lower for word in ['vegas', 'casino', 'neon']):
-            return "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=267&fit=crop"
-        elif any(word in title_lower for word in ['dragon', 'fire', 'magic']):
-            return "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=267&fit=crop"
+        # Download and save a themed fallback image
+        if any(word in theme_name + theme_desc for word in ['egypt', 'pharaoh', 'pyramid', 'ancient']):
+            image_url = "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1920&h=1080&fit=crop"
+        elif any(word in theme_name + theme_desc for word in ['vegas', 'neon', 'electric', 'bright']):
+            image_url = "https://images.unsplash.com/photo-1569701813229-33284b643e3c?w=1920&h=1080&fit=crop"
+        elif any(word in theme_name + theme_desc for word in ['luxury', 'diamond', 'gold', 'premium']):
+            image_url = "https://images.unsplash.com/photo-1541435469116-8ce8ccc4ff85?w=1920&h=1080&fit=crop"
+        elif any(word in theme_name + theme_desc for word in ['west', 'saloon', 'cowboy', 'frontier']):
+            image_url = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop"
         else:
-            return "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=267&fit=crop"
+            image_url = "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&h=1080&fit=crop"
+        
+        hero_filename = "hero-bg.jpg"
+        local_path = self.download_image(image_url, "../hero-bg.jpg")
+        
+        if local_path:
+            return hero_filename
+        else:
+            # If download fails, just return the filename and let the template handle it
+            return hero_filename
     
     def clean_json_response(self, content):
         """Clean and extract JSON from API response"""
@@ -683,45 +704,44 @@ Return exactly this JSON structure:
                 "disclaimer": "This is a social casino for entertainment purposes only. No real money gambling or prizes involved."
             }
     
-    def generate_legal_content(self, page_type, site_name, domain_name):
-        """Generate legal page content using GPT"""
-        page_configs = {
-            'terms': {
-                'title': 'Terms & Conditions',
-                'subtitle': 'Please read these terms carefully before using our services',
-                'type': 'terms'
-            },
-            'privacy': {
-                'title': 'Privacy Policy',
-                'subtitle': 'Your privacy is important to us',
-                'type': 'privacy'
-            },
-            'cookies': {
-                'title': 'Cookie Policy',
-                'subtitle': 'How we use cookies to improve your experience',
-                'type': 'cookies'
-            },
-            'responsible': {
-                'title': 'Responsible Social Gaming',
-                'subtitle': 'Gaming should always be fun and responsible',
-                'type': 'responsible'
-            }
-        }
-        
-        config = page_configs.get(page_type, page_configs['terms'])
-        
-        prompt = f"""Generate comprehensive {config['title']} content for the social casino website "{site_name}" (domain: {domain_name}).
+    def generate_all_legal_content(self, site_name, domain_name):
+        """Generate all legal content in a single optimized API call"""
+        prompt = f"""Generate comprehensive legal content for the social casino website "{site_name}" (domain: {domain_name}).
 
 This is a SOCIAL CASINO website - no real money gambling involved, entertainment only.
 
-Structure the content with HTML formatting:
+Generate ALL four legal pages in a single response. Structure the content with HTML formatting:
 - Use <h2> for main sections
 - Use <h3> for subsections  
 - Use <p> for paragraphs
 - Use <ul> and <li> for lists
 - Use <strong> for emphasis
 
-Make it professional, legally sound, and comprehensive. Include all relevant sections for a {page_type} page.
+Return a JSON object with all four legal pages:
+{{
+    "terms": {{
+        "title": "Terms & Conditions",
+        "subtitle": "Please read these terms carefully before using our services",
+        "content": "Full HTML-formatted terms content (1500-2000 words)..."
+    }},
+    "privacy": {{
+        "title": "Privacy Policy", 
+        "subtitle": "Your privacy is important to us",
+        "content": "Full HTML-formatted privacy policy content (1500-2000 words)..."
+    }},
+    "cookies": {{
+        "title": "Cookie Policy",
+        "subtitle": "How we use cookies to improve your experience",
+        "content": "Full HTML-formatted cookie policy content (1000-1500 words)..."
+    }},
+    "responsible": {{
+        "title": "Responsible Social Gaming",
+        "subtitle": "Gaming should always be fun and responsible",
+        "content": "Full HTML-formatted responsible gaming content (1000-1500 words)..."
+    }}
+}}
+
+Make all content professional, legally sound, and comprehensive. Include all relevant sections for each policy type.
 
 For social casino context:
 - No real money gambling
@@ -729,42 +749,84 @@ For social casino context:
 - No real prizes or cash-outs
 - Virtual currency/credits only
 - Age restriction (18+)
-- Data protection compliance
-
-Generate about 1500-2000 words of properly formatted legal content."""
+- Data protection compliance"""
         
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are a legal content writer specializing in social casino terms and policies."},
+                    {"role": "system", "content": "You are a legal content writer specializing in social casino terms and policies. Generate comprehensive legal content."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
-                max_tokens=2500
+                max_tokens=4000
             )
             
             content = response.choices[0].message.content
-            self.log_debug(f"Generated {page_type} content ({len(content)} chars)")
+            legal_data = self.clean_json_response(content)
             
-            return {
-                'page_title': config['title'],
-                'page_subtitle': config['subtitle'], 
-                'page_type': config['type'],
-                'content': content,
-                'last_updated': datetime.now().strftime("%B %d, %Y")
-            }
+            if legal_data and isinstance(legal_data, dict):
+                self.log_debug(f"Generated all legal content in one call")
+                
+                # Process and return individual page data
+                legal_pages = {}
+                for page_type in ['terms', 'privacy', 'cookies', 'responsible']:
+                    if page_type in legal_data:
+                        page_data = legal_data[page_type]
+                        legal_pages[page_type] = {
+                            'page_title': page_data.get('title', f'{page_type.title()} Policy'),
+                            'page_subtitle': page_data.get('subtitle', 'Important information'),
+                            'page_type': page_type,
+                            'content': page_data.get('content', '<p>Content will be updated soon.</p>'),
+                            'last_updated': datetime.now().strftime("%B %d, %Y")
+                        }
+                    else:
+                        # Fallback for missing pages
+                        legal_pages[page_type] = self.get_fallback_legal_content(page_type, site_name)
+                
+                return legal_pages
+            else:
+                raise ValueError("Invalid legal content response")
             
         except Exception as e:
-            self.log_debug(f"Error generating {page_type} content: {e}")
-            # Return basic fallback content
-            return {
-                'page_title': config['title'],
-                'page_subtitle': config['subtitle'],
-                'page_type': config['type'],
-                'content': f"<h2>{config['title']}</h2><p>Content for {config['title']} will be updated soon. This is a social casino for entertainment purposes only.</p>",
-                'last_updated': datetime.now().strftime("%B %d, %Y")
+            self.log_debug(f"Error generating legal content: {e}")
+            # Return basic fallback content for all pages
+            legal_pages = {}
+            for page_type in ['terms', 'privacy', 'cookies', 'responsible']:
+                legal_pages[page_type] = self.get_fallback_legal_content(page_type, site_name)
+            return legal_pages
+    
+    def get_fallback_legal_content(self, page_type, site_name):
+        """Get fallback legal content for a specific page type"""
+        fallbacks = {
+            'terms': {
+                'page_title': 'Terms & Conditions',
+                'page_subtitle': 'Please read these terms carefully before using our services',
+                'content': f'<h2>Terms & Conditions</h2><p>Welcome to {site_name}. This is a social casino for entertainment purposes only. No real money gambling is involved.</p>'
+            },
+            'privacy': {
+                'page_title': 'Privacy Policy',
+                'page_subtitle': 'Your privacy is important to us',
+                'content': f'<h2>Privacy Policy</h2><p>{site_name} respects your privacy. We collect minimal data for the best gaming experience.</p>'
+            },
+            'cookies': {
+                'page_title': 'Cookie Policy',
+                'page_subtitle': 'How we use cookies to improve your experience',
+                'content': f'<h2>Cookie Policy</h2><p>{site_name} uses cookies to enhance your gaming experience and remember your preferences.</p>'
+            },
+            'responsible': {
+                'page_title': 'Responsible Social Gaming',
+                'page_subtitle': 'Gaming should always be fun and responsible',
+                'content': '<h2>Responsible Social Gaming</h2><p>We promote responsible gaming. This is entertainment only - no real money involved.</p>'
             }
+        }
+        
+        content = fallbacks.get(page_type, fallbacks['terms'])
+        return {
+            **content,
+            'page_type': page_type,
+            'last_updated': datetime.now().strftime("%B %d, %Y")
+        }
     
     def select_theme_font(self, chosen_theme):
         """Select appropriate font based on theme"""
@@ -852,12 +914,22 @@ Generate about 1500-2000 words of properly formatted legal content."""
         selected_font = self.select_theme_font(chosen_theme)
         print(f"✅ Colors and font generated: {colors['primary_color']}, {selected_font}")
         
-        # Step 4: Generate content (includes fetching real games)
-        print(f"✍️  Generating website content...")
+        # Step 4: Generate hero image
+        print(f"🖼️ Generating hero background image...")
+        hero_image = self.generate_hero_image(chosen_theme, site_name)
+        print(f"✅ Hero image generated: {hero_image}")
+        
+        # Step 5: Generate content (includes fetching real games)
+        print(f"✍️  Generating website content and fetching games...")
         content = self.generate_content(site_name, chosen_theme, domain_name)
         print(f"✅ Content generated: {content['hero_title']}")
         
-        # Step 5: Prepare common template data
+        # Step 6: Generate all legal content in one optimized call
+        print(f"📄 Generating all legal content...")
+        legal_pages_data = self.generate_all_legal_content(site_name, domain_name)
+        print(f"✅ All legal content generated in one call")
+        
+        # Step 7: Prepare common template data
         base_data = {
             'site_name': site_name,
             'primary_font': selected_font,
@@ -872,7 +944,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
             }
         }
         
-        # Step 6: Generate Homepage
+        # Step 8: Generate Homepage
         print(f"🏠 Generating homepage...")
         homepage_data = {
             **base_data,
@@ -880,7 +952,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
             'hero': {
                 'title': content['hero_title'],
                 'description': content['hero_description'],
-                'background_image': 'hero-bg.jpg',  # You might want to generate this
+                'background_image': hero_image,
                 'overlay_opacity': 0.6,
                 'cta_text': content['cta_text'],
                 'cta_url': '/get-started',
@@ -898,7 +970,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
             f"{site_name.lower().replace(' ', '-')}-homepage.html"
         )
         
-        # Step 7: Generate Games Page
+        # Step 9: Generate Games Page
         print(f"🎮 Generating games page...")
         all_games = content['sections'][0]['items'] + content['sections'][1]['items']
         
@@ -914,18 +986,14 @@ Generate about 1500-2000 words of properly formatted legal content."""
             f"{site_name.lower().replace(' ', '-')}-games.html"
         )
         
-        # Step 8: Generate Legal Pages
-        print(f"📄 Generating legal pages...")
-        legal_pages = ['terms', 'privacy', 'cookies', 'responsible']
+        # Step 10: Generate Legal Pages
+        print(f"📄 Rendering legal pages...")
         legal_paths = []
         
-        for page_type in legal_pages:
-            print(f"  📝 Generating {page_type} page...")
-            legal_content = self.generate_legal_content(page_type, site_name, domain_name)
-            
+        for page_type in ['terms', 'privacy', 'cookies', 'responsible']:
             legal_data = {
                 **base_data,
-                **legal_content
+                **legal_pages_data[page_type]
             }
             
             legal_path = self.render_template(
@@ -935,7 +1003,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
             )
             legal_paths.append(legal_path)
         
-        # Step 9: Generate Individual Game Pages
+        # Step 11: Generate Individual Game Pages
         print(f"🕹️  Generating individual game pages...")
         game_paths = []
         
@@ -959,7 +1027,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
             )
             game_paths.append(game_path)
         
-        # Step 10: Generate Summary
+        # Step 12: Generate Summary
         print("\n" + "=" * 60)
         print("🎉 COMPLETE WEBSITE GENERATED SUCCESSFULLY!")
         print("=" * 60)
@@ -973,6 +1041,7 @@ Generate about 1500-2000 words of properly formatted legal content."""
         print(f"🎨 Primary Color: {colors['primary_color']}")
         print(f"🔤 Font: {selected_font}")
         print(f"🎮 Total Games: {len(all_games)}")
+        print(f"🖼️  Hero Image: {hero_image}")
         print("=" * 60)
         
         return {
@@ -983,7 +1052,8 @@ Generate about 1500-2000 words of properly formatted legal content."""
             'total_files': 2 + len(legal_paths) + len(game_paths),
             'theme': chosen_theme,
             'colors': colors,
-            'font': selected_font
+            'font': selected_font,
+            'hero_image': hero_image
         }
 
 
