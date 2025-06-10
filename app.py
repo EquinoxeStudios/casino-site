@@ -1980,9 +1980,8 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Get game title from data attribute or fallback
+    // Get game title from the page
     const gameTitle = document.querySelector('.game-title')?.textContent || 'Game';
-    const gameProvider = document.querySelector('.provider-badge')?.textContent || 'Unknown';
     
     console.log('🎮 Game page loaded:', gameTitle);
     
@@ -1990,20 +1989,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof gtag !== 'undefined') {
         gtag('event', 'game_view', {
             'game_title': gameTitle,
-            'game_provider': gameProvider,
             'event_category': 'games',
-            'event_label': `${gameTitle} - ${gameProvider}`
+            'event_label': gameTitle
         });
     }
-});"""
-        
+});
+"""
         game_js_path = self.js_dir / "game.js"
         with open(game_js_path, 'w', encoding='utf-8') as f:
             f.write(js_content)
         
         self.log_debug(f"Generated game.js: {game_js_path}")
         return game_js_path
-    
+     
     def download_image(self, image_url, filename):
         """Download image from URL and save locally with better error handling"""
         try:

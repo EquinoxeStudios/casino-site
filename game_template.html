@@ -59,14 +59,6 @@
                 </nav>
                 
                 <h1 class="game-title">{{ game.title }}</h1>
-                
-                <div class="game-meta">
-                    <div class="game-provider">
-                        <i class="fas fa-gamepad"></i>
-                        <span>Provider:</span>
-                        <span class="provider-badge">{{ game.provider | default('Unknown') }}</span>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -95,41 +87,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Game Info Section -->
-        <section class="game-info-section">
-            <div class="game-info-content">
-                <div class="game-description">
-                    <h3>About {{ game.title }}</h3>
-                    <p>{{ game.description | default('Experience the excitement of this thrilling slot game with stunning graphics, engaging gameplay, and the chance to win big. Enjoy hours of entertainment with this premium casino game.') }}</p>
-                    <p>This social casino game is designed for entertainment purposes only. No real money gambling is involved, making it perfect for casual gaming and fun.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Similar Games Section -->
-        {% if similar_games %}
-        <section class="similar-games">
-            <div class="similar-games-content">
-                <h3>You Might Also Like</h3>
-                <div class="similar-games-grid">
-                    {% for similar_game in similar_games %}
-                    <div class="similar-game-card" onclick="window.location.href='{{ similar_game.url }}'">
-                        <img src="{{ similar_game.image }}" 
-                             alt="{{ similar_game.title }}" 
-                             class="similar-game-image"
-                             loading="lazy"
-                             onerror="this.style.background='linear-gradient(45deg, #2a1a1a, #3a2a2a)'">
-                        <div class="similar-game-info">
-                            <div class="similar-game-title">{{ similar_game.title }}</div>
-                            <div class="similar-game-provider">{{ similar_game.provider | default('Featured') }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
-        {% endif %}
 
         <!-- Footer -->
         <footer class="footer">
