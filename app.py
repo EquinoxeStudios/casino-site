@@ -319,13 +319,21 @@ class CompleteWebsiteGenerator:
         """Generate a hero image based on the theme using GPT and download it"""
         prompt = f"""Generate a URL for a high-quality hero background image for a social casino website.
 
-Theme: {chosen_theme['name']}
-Description: {chosen_theme['description']}
-Mood: {', '.join(chosen_theme['mood'])}
+Theme Name: {chosen_theme['name']}
+Theme Description: {chosen_theme['description']}
+Theme Mood: {', '.join(chosen_theme['mood'])}
+Target Feel: {chosen_theme['target_feel']}
 
-I need a direct URL to a free stock photo that matches this theme.
-Consider using Unsplash, Pexels, or Pixabay URLs.
-The image should be casino/gaming themed, high quality, and suitable as a hero background.
+Based on this specific theme, find a direct URL to a free stock photo that perfectly captures the theme's essence.
+The image should visually represent the theme description and mood.
+For example:
+- If it's an Egyptian theme, find pyramids/sphinx/golden artifacts
+- If it's a Vegas theme, find neon lights/casino signs/city skyline
+- If it's a luxury theme, find gold/diamonds/premium textures
+- If it's a fantasy theme, find mystical/magical imagery
+
+Use Unsplash direct image URLs in this format:
+https://images.unsplash.com/photo-[ID]?w=1920&h=1080&fit=crop&q=80
 
 Return ONLY the direct image URL, nothing else."""
         
@@ -371,30 +379,67 @@ Return ONLY the direct image URL, nothing else."""
             return self.get_themed_hero_fallback(chosen_theme)
     
     def get_themed_hero_fallback(self, chosen_theme):
-        """Get a themed fallback hero image URL based on theme characteristics"""
+        """Get a themed fallback hero image using theme analysis"""
         theme_name = chosen_theme.get('name', '').lower()
         theme_desc = chosen_theme.get('description', '').lower()
+        theme_text = theme_name + ' ' + theme_desc
         
-        # Download and save a themed fallback image
-        if any(word in theme_name + theme_desc for word in ['egypt', 'pharaoh', 'pyramid', 'ancient']):
-            image_url = "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1920&h=1080&fit=crop"
-        elif any(word in theme_name + theme_desc for word in ['vegas', 'neon', 'electric', 'bright']):
-            image_url = "https://images.unsplash.com/photo-1569701813229-33284b643e3c?w=1920&h=1080&fit=crop"
-        elif any(word in theme_name + theme_desc for word in ['luxury', 'diamond', 'gold', 'premium']):
-            image_url = "https://images.unsplash.com/photo-1541435469116-8ce8ccc4ff85?w=1920&h=1080&fit=crop"
-        elif any(word in theme_name + theme_desc for word in ['west', 'saloon', 'cowboy', 'frontier']):
-            image_url = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop"
+        # Analyze theme and select appropriate search terms
+        search_terms = []
+        if any(word in theme_text for word in ['egypt', 'pharaoh', 'pyramid', 'ancient', 'sphinx']):
+            search_terms = ['egypt', 'pyramid', 'pharaoh', 'ancient']
+        elif any(word in theme_text for word in ['vegas', 'neon', 'electric', 'bright', 'lights']):
+            search_terms = ['vegas', 'neon', 'casino', 'lights']
+        elif any(word in theme_text for word in ['luxury', 'diamond', 'gold', 'premium', 'vip']):
+            search_terms = ['luxury', 'gold', 'diamond', 'premium']
+        elif any(word in theme_text for word in ['west', 'saloon', 'cowboy', 'frontier', 'desert']):
+            search_terms = ['western', 'desert', 'saloon', 'frontier']
+        elif any(word in theme_text for word in ['ocean', 'sea', 'underwater', 'marine', 'aquatic']):
+            search_terms = ['ocean', 'underwater', 'marine', 'blue']
+        elif any(word in theme_text for word in ['space', 'cosmic', 'galaxy', 'star', 'nebula']):
+            search_terms = ['space', 'galaxy', 'cosmic', 'stars']
+        elif any(word in theme_text for word in ['jungle', 'tropical', 'rainforest', 'amazon']):
+            search_terms = ['jungle', 'tropical', 'rainforest', 'green']
+        elif any(word in theme_text for word in ['ice', 'frozen', 'arctic', 'winter', 'snow']):
+            search_terms = ['ice', 'frozen', 'arctic', 'crystal']
         else:
-            image_url = "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&h=1080&fit=crop"
+            search_terms = ['casino', 'gaming', 'lights', 'entertainment']
+        
+        # Try multiple image URLs based on search terms
+        fallback_urls = [
+            f"https://source.unsplash.com/1920x1080/?{','.join(search_terms)}",
+            f"https://source.unsplash.com/1920x1080/?{search_terms[0]},night",
+            f"https://source.unsplash.com/1920x1080/?{search_terms[0]}"
+        ]
         
         hero_filename = "hero-bg.jpg"
-        local_path = self.download_image(image_url, "../hero-bg.jpg")
+        hero_path = self.output_dir / hero_filename
         
-        if local_path:
-            return hero_filename
-        else:
-            # If download fails, just return the filename and let the template handle it
-            return hero_filename
+        for url in fallback_urls:
+            try:
+                self.log_debug(f"Trying fallback URL: {url}")
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+                
+                response = requests.get(url, timeout=15, headers=headers, allow_redirects=True)
+                response.raise_for_status()
+                
+                # Check if we got an image
+                content_type = response.headers.get('content-type', '').lower()
+                if any(img_type in content_type for img_type in ['image/', 'jpeg', 'jpg', 'png']):
+                    with open(hero_path, 'wb') as f:
+                        f.write(response.content)
+                    
+                    self.log_debug(f"Fallback hero image saved: {hero_filename}")
+                    return hero_filename
+            except Exception as e:
+                self.log_debug(f"Fallback URL failed: {e}")
+                continue
+        
+        # If all fails, return filename anyway
+        self.log_debug("All fallback URLs failed, returning filename only")
+        return hero_filename
     
     def clean_json_response(self, content):
         """Clean and extract JSON from API response"""
@@ -572,49 +617,58 @@ Return exactly this JSON structure with hex colors:
             return hex_color
     
     def get_theme_based_colors(self, chosen_theme):
-        """Get cohesive colors based on the specific theme"""
-        theme_name = chosen_theme['name'].lower()
-        theme_desc = chosen_theme['description'].lower()
+        """Get colors using GPT as a fallback"""
+        self.log_debug("Using GPT for fallback color generation")
         
-        if any(word in theme_name + theme_desc for word in ['egypt', 'pharaoh', 'pyramid', 'ancient']):
-            return {
-                "primary_color": "#D4A574",
-                "secondary_color": "#8B4513",
-                "accent_color": "#FFD700",
-                "background_start": "#1A1A2E",
-                "background_end": "#16213E",
-                "primary_hover": "#C19A68",
-                "secondary_hover": "#7A3F12",
-                "sidebar_start": "#1A1A2E",
-                "sidebar_end": "#16213E",
-                "footer_bg": "#16213E"
-            }
-        elif any(word in theme_name + theme_desc for word in ['vegas', 'neon', 'electric', 'bright']):
-            return {
-                "primary_color": "#00D4FF",
-                "secondary_color": "#8A2BE2",
-                "accent_color": "#FF1493",
-                "background_start": "#0A0A1A",
-                "background_end": "#1A0A2E",
-                "primary_hover": "#00B8E6",
-                "secondary_hover": "#7B27CC",
-                "sidebar_start": "#0A0A1A",
-                "sidebar_end": "#1A0A2E",
-                "footer_bg": "#1A0A2E"
-            }
-        else:
-            return {
-                "primary_color": "#0EA5E9",
-                "secondary_color": "#8B5CF6",
-                "accent_color": "#10B981",
-                "background_start": "#0F172A",
-                "background_end": "#1E293B",
-                "primary_hover": "#0284C7",
-                "secondary_hover": "#7C3AED",
-                "sidebar_start": "#0F172A",
-                "sidebar_end": "#1E293B",
-                "footer_bg": "#1E293B"
-            }
+        # Simplified prompt for fallback
+        simple_prompt = f"""Generate casino website colors for: {chosen_theme['name']}
+
+Return this exact JSON structure with hex colors:
+{{
+    "primary_color": "#hex",
+    "secondary_color": "#hex",
+    "accent_color": "#hex",
+    "background_start": "#hex",
+    "background_end": "#hex",
+    "primary_hover": "#hex",
+    "secondary_hover": "#hex",
+    "sidebar_start": "#hex",
+    "sidebar_end": "#hex",
+    "footer_bg": "#hex"
+}}"""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",  # Use faster model for fallback
+                messages=[
+                    {"role": "system", "content": "Generate a color palette. Return only valid JSON."},
+                    {"role": "user", "content": simple_prompt}
+                ],
+                temperature=0.5,
+                max_tokens=300
+            )
+            
+            content = response.choices[0].message.content
+            colors = self.clean_json_response(content)
+            
+            if colors and isinstance(colors, dict) and 'primary_color' in colors:
+                return colors
+        except:
+            pass
+        
+        # Ultimate fallback - generic casino colors
+        return {
+            "primary_color": "#0EA5E9",
+            "secondary_color": "#8B5CF6",
+            "accent_color": "#10B981",
+            "background_start": "#0F172A",
+            "background_end": "#1E293B",
+            "primary_hover": "#0284C7",
+            "secondary_hover": "#7C3AED",
+            "sidebar_start": "#0F172A",
+            "sidebar_end": "#1E293B",
+            "footer_bg": "#1E293B"
+        }
     
     def generate_content(self, site_name, chosen_theme, target_domain):
         """Generate all website content based on theme with real games"""
@@ -829,21 +883,58 @@ For social casino context:
         }
     
     def select_theme_font(self, chosen_theme):
-        """Select appropriate font based on theme"""
-        theme_name = chosen_theme.get('name', '').lower()
-        theme_desc = chosen_theme.get('description', '').lower()
+        """Select appropriate font based on theme using GPT"""
+        prompt = f"""Select the perfect Google Font for this casino website theme:
+
+Theme Name: {chosen_theme['name']}
+Theme Description: {chosen_theme['description']}
+Theme Mood: {', '.join(chosen_theme['mood'])}
+Target Feel: {chosen_theme['target_feel']}
+
+Based on this theme, choose ONE Google Font that best matches the theme's personality.
+Consider the theme's mood and atmosphere when selecting.
+
+Examples of Google Fonts to consider (but not limited to):
+- Cinzel (elegant, classical)
+- Oswald (bold, modern)
+- Playfair Display (sophisticated, luxury)
+- Rye (western, rustic)
+- Cormorant Garamond (mystical, fantasy)
+- Inter (clean, modern)
+- Bebas Neue (bold, impactful)
+- Abril Fatface (dramatic, bold)
+- Righteous (futuristic, tech)
+- Creepster (spooky, horror)
+- Monoton (neon, retro)
+- Bungee (bold, playful)
+- Alfa Slab One (strong, powerful)
+- Russo One (tech, space)
+
+Return ONLY the font name exactly as it appears in Google Fonts, nothing else."""
         
-        if any(word in theme_name + theme_desc for word in ['egypt', 'pharaoh', 'pyramid', 'ancient']):
-            return 'Cinzel'
-        elif any(word in theme_name + theme_desc for word in ['vegas', 'neon', 'electric', 'bright']):
-            return 'Oswald'
-        elif any(word in theme_name + theme_desc for word in ['luxury', 'elegant', 'sophisticated', 'premium']):
-            return 'Playfair Display'
-        elif any(word in theme_name + theme_desc for word in ['west', 'saloon', 'cowboy', 'frontier']):
-            return 'Rye'
-        elif any(word in theme_name + theme_desc for word in ['mystical', 'magic', 'dragon', 'fantasy']):
-            return 'Cormorant Garamond'
-        else:
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a typography expert. Return only the font name, nothing else."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=50
+            )
+            
+            font_name = response.choices[0].message.content.strip()
+            
+            # Validate it's a reasonable font name (not empty, not too long)
+            if font_name and len(font_name) < 50 and not any(char in font_name for char in ['<', '>', '{', '}', '[', ']']):
+                self.log_debug(f"Selected font: {font_name}")
+                return font_name
+            else:
+                self.log_debug("Invalid font response, using fallback")
+                return 'Inter'
+            
+        except Exception as e:
+            self.log_debug(f"Error selecting font: {e}")
             return 'Inter'
     
     def render_template(self, template_filename, data, output_filename):
@@ -911,8 +1002,11 @@ For social casino context:
         # Step 3: Generate color palette and font
         print(f"🎨 Generating color palette...")
         colors = self.generate_color_palette(chosen_theme)
+        print(f"✅ Colors generated: Primary {colors['primary_color']}, Secondary {colors['secondary_color']}")
+        
+        print(f"🔤 Selecting theme-appropriate font...")
         selected_font = self.select_theme_font(chosen_theme)
-        print(f"✅ Colors and font generated: {colors['primary_color']}, {selected_font}")
+        print(f"✅ Font selected: {selected_font}")
         
         # Step 4: Generate hero image
         print(f"🖼️ Generating hero background image...")
