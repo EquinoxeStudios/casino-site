@@ -2104,13 +2104,29 @@ document.addEventListener('DOMContentLoaded', () => {
             game_url = data.get('url')
             if game_url:
                 self.log_debug(f"Got game URL for {game_id}: {game_url[:50]}...")
+                # Ensure token is present in the URL for direct embed
+                from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+                parsed = urlparse(game_url)
+                query = parse_qs(parsed.query)
+                if 'token' not in query or query['token'][0] != self.slotslaunch_token:
+                    query['token'] = [self.slotslaunch_token]
+                    new_query = urlencode(query, doseq=True)
+                    game_url = urlunparse(parsed._replace(query=new_query))
+                    self.log_debug(f"Appended token to game URL: {game_url[:80]}...")
                 return game_url
             else:
                 self.log_debug(f"No URL in response for {game_id}")
-                return f"https://demo.slotslaunch.com/game/{game_id}"
+                # Fallback to direct embed URL with token
+                fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}"
+                self.log_debug(f"Using fallback embed URL: {fallback_url}")
+                return fallback_url
         else:
             self.log_debug(f"Failed to get game URL for {game_id}: {response.status_code}")
-            return f"https://demo.slotslaunch.com/game/{game_id}"
+            # Fallback to direct embed URL with token
+            fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}"
+            self.log_debug(f"Using fallback embed URL: {fallback_url}")
+            return fallback_url
     
     def validate_game_data(self, game):
         """Validate and clean game data from API"""
