@@ -2360,7 +2360,7 @@ Return JSON in exactly this form:
 }}"""
 
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are a JSON generator. Respond only with valid JSON, no explanations."},
                 {"role": "user", "content": prompt}
@@ -2411,7 +2411,7 @@ Return exactly this JSON structure with hex colors:
 }}"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are a color palette generator. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
@@ -2490,7 +2490,7 @@ Return exactly this JSON structure:
 }}"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are a JSON generator. Respond only with valid JSON, no explanations."},
                 {"role": "user", "content": prompt}
@@ -2563,13 +2563,13 @@ For social casino context:
 - Data protection compliance
 """
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are a legal content writer specializing in social casino terms and policies. Generate comprehensive legal content."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=2000,
+            max_tokens=3800,
             response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content
@@ -2625,7 +2625,7 @@ Examples of Google Fonts to consider (but not limited to):
 Return ONLY the font name exactly as it appears in Google Fonts, nothing else."""
         
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": "You are a typography expert. Return only the font name, nothing else."},
                 {"role": "user", "content": prompt}
