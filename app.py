@@ -2873,11 +2873,30 @@ Return ONLY a JSON array of objects with "title" and "body".
         
         return '\n'.join(scripts)
 
-    def generate_complete_website(self, domain_name):
+    def generate_complete_website(self, domain_name, site_type="noip"):
         """Generate complete website with all pages"""
         print(f"🚀 Starting complete website generation for: {domain_name}")
         print("=" * 60)
-        
+        print(f"Site type: {site_type}")
+
+        # Helper functions for extension and folder logic
+        def page_ext():
+            return ".php" if site_type == "traffic_armor" else ".html"
+        def page_folder(filename):
+            # For traffic armor, return folder and index.php, else just filename.html
+            if site_type == "traffic_armor":
+                base = filename.replace(".html", "").replace(".php", "")
+                return f"{base}/index.php"
+            else:
+                return f"{filename}.html"
+        def page_link(filename, prefix=""):
+            # For traffic armor, use trailing slash, else .html
+            if site_type == "traffic_armor":
+                base = filename.replace(".html", "").replace(".php", "")
+                return f"{prefix}{base}/"
+            else:
+                return f"{prefix}{filename}.html"
+
         # Step 1: Extract site name and generate basic data
         site_name = domain_name.replace('.com', '').replace('.', ' ').title()
         print(f"📝 Site Name: {site_name}")
@@ -2987,10 +3006,18 @@ Return ONLY a JSON array of objects with "title" and "body".
         # Add canonical URL for homepage
         homepage_data['canonical_url'] = f"https://{domain_name}/"
 
+        # Determine homepage and games page filenames
+        if site_type == "traffic_armor":
+            homepage_filename = "index.php"
+            games_filename = "games/index.php"
+        else:
+            homepage_filename = "index.html"
+            games_filename = "games.html"
+
         homepage_path = self.render_template(
             'homepage_template.html',
             homepage_data,
-            f"{site_name.lower().replace(' ', '-')}-homepage.html"
+            homepage_filename
         )
         
         # Step 10: Generate Games Page
@@ -3003,11 +3030,10 @@ Return ONLY a JSON array of objects with "title" and "body".
             'total_games': len(all_games),
             'canonical_url': f"https://{domain_name}/games"
         }
-        
         games_page_path = self.render_template(
             'games_template.html',
             games_data,
-            f"{site_name.lower().replace(' ', '-')}-games.html"
+            games_filename
         )
         
         # Step 11: Generate Legal Pages
@@ -3049,8 +3075,10 @@ Return ONLY a JSON array of objects with "title" and "body".
                 'similar_games': similar_games,
                 'canonical_url': f"https://{domain_name}/games/{game['slug']}"
             }
-            
-            game_filename = f"games/{game['slug']}.html"
+            if site_type == "traffic_armor":
+                game_filename = f"games/{game['slug']}/index.php"
+            else:
+                game_filename = f"games/{game['slug']}.html"
             game_path = self.render_template(
                 'game_template.html',
                 game_data,
@@ -3060,11 +3088,27 @@ Return ONLY a JSON array of objects with "title" and "body".
         
         # Step 12.1: Generate About Us and Contact Us Pages
         print(f"👥 Generating About Us page...")
-        about_path = self.generate_about_page(site_name, domain_name, base_data)
+        if site_type == "traffic_armor":
+            about_filename = "pages/about/index.php"
+        else:
+            about_filename = "pages/about.html"
+        about_path = self.render_template(
+            "about_template.html",
+            {**base_data, "about_sections": self.generate_about_sections(site_name, domain_name), "canonical_url": f"https://{domain_name}/about"},
+            about_filename
+        )
         print(f"✅ About Us page generated: {about_path}")
 
         print(f"✉️  Generating Contact Us page...")
-        contact_path = self.generate_contact_page(site_name, domain_name, base_data)
+        if site_type == "traffic_armor":
+            contact_filename = "pages/contact/index.php"
+        else:
+            contact_filename = "pages/contact.html"
+        contact_path = self.render_template(
+            "contact_template.html",
+            {**base_data, "canonical_url": f"https://{domain_name}/contact"},
+            contact_filename
+        )
         print(f"✅ Contact Us page generated: {contact_path}")
 
         # Step 13: Generate Summary
@@ -3101,7 +3145,8 @@ Return ONLY a JSON array of objects with "title" and "body".
             'theme': chosen_theme,
             'colors': colors,
             'font': selected_font,
-            'hero_image': hero_image
+            'hero_image': hero_image,
+            'site_type': site_type
         }
 
 
@@ -3130,13 +3175,23 @@ def main():
     if not domain:
         print("❌ Domain name is required!")
         return
+
+    # Prompt for site type
+    print("\nSelect site type:")
+    print("1) noip (default)")
+    print("2) traffic armor")
+    site_type = input("Enter 1 or 2: ").strip()
+    if site_type == "2":
+        site_type = "traffic_armor"
+    else:
+        site_type = "noip"
     
     try:
         # Initialize generator
         generator = CompleteWebsiteGenerator(api_key)
         
-        # Generate complete website
-        result = generator.generate_complete_website(domain)
+        # Generate complete website with site_type
+        result = generator.generate_complete_website(domain, site_type=site_type)
         
         if result:
             print(f"\n🎯 Next steps:")
