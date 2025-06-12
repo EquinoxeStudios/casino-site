@@ -2332,7 +2332,15 @@ Visual Requirements:
         
         content = content.strip()
         
-        return json.loads(content)
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            print("❌ JSONDecodeError in clean_json_response:")
+            print("---- RAW CONTENT START ----")
+            print(content[:1000])
+            print("---- RAW CONTENT END ----")
+            print(f"Error: {e}")
+            raise
     
     def generate_theme_ideas(self, domain_name):
         """Generate 3 theme ideas for the social casino website"""
@@ -2813,7 +2821,9 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
                 'content': content['about_paragraphs']
             }
         }
-        
+        # Add canonical URL for homepage
+        homepage_data['canonical_url'] = f"https://{domain_name}/"
+
         homepage_path = self.render_template(
             'homepage_template.html',
             homepage_data,
@@ -2827,7 +2837,8 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         games_data = {
             **base_data,
             'all_games': all_games,
-            'total_games': len(all_games)
+            'total_games': len(all_games),
+            'canonical_url': f"https://{domain_name}/games"
         }
         
         games_page_path = self.render_template(
@@ -2845,7 +2856,13 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
                 **base_data,
                 **legal_pages_data[page_type]
             }
-            
+            # Canonical URL for legal pages
+            if page_type == 'responsible':
+                canonical_url = f"https://{domain_name}/responsible-gaming"
+            else:
+                canonical_url = f"https://{domain_name}/{page_type}"
+            legal_data['canonical_url'] = canonical_url
+
             legal_path = self.render_template(
                 'legal_template.html',
                 legal_data,
@@ -2866,7 +2883,8 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             game_data = {
                 **base_data,
                 'game': game,
-                'similar_games': similar_games
+                'similar_games': similar_games,
+                'canonical_url': f"https://{domain_name}/games/{game['slug']}"
             }
             
             game_filename = f"games/{game['slug']}.html"
