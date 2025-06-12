@@ -2811,7 +2811,7 @@ Return ONLY a JSON array of objects with "title" and "body".
         about_data = {
             **base_data,
             "about_sections": about_sections,
-            "canonical_url": f"https://{domain_name}/about"
+            "canonical_url": f"https://{domain_name}/pages/about"
         }
         return self.render_template(
             "about_template.html",
@@ -2823,7 +2823,7 @@ Return ONLY a JSON array of objects with "title" and "body".
         """Render the Contact Us page"""
         contact_data = {
             **base_data,
-            "canonical_url": f"https://{domain_name}/contact"
+            "canonical_url": f"https://{domain_name}/pages/contact"
         }
         return self.render_template(
             "contact_template.html",
@@ -2981,6 +2981,13 @@ Return ONLY a JSON array of objects with "title" and "body".
             'primary_font': selected_font,
             'colors': colors,  # Now includes all required colors
             'favicon': favicon_filename,
+            # Universal URLs for sidebar/footer (work for both site types)
+            'about_url': page_link("about", "/pages/"),
+            'contact_url': page_link("contact", "/pages/"),
+            'terms_url': page_link("terms", "/pages/"),
+            'privacy_url': page_link("privacy", "/pages/"),
+            'cookies_url': page_link("cookies", "/pages/"),
+            'responsible_url': page_link("responsible", "/pages/"),
             'footer': {
                 'disclaimer': {
                     'title': 'Disclaimer',
@@ -3153,8 +3160,8 @@ Return ONLY a JSON array of objects with "title" and "body".
             else:
                 all_urls.append(f"https://{domain_name}/{page_type}")
         # About and Contact
-        all_urls.append(f"https://{domain_name}/about")
-        all_urls.append(f"https://{domain_name}/contact")
+        all_urls.append(f"https://{domain_name}/pages/about")
+        all_urls.append(f"https://{domain_name}/pages/contact")
         # Individual game pages
         for game in all_games:
             all_urls.append(f"https://{domain_name}/games/{game['slug']}")

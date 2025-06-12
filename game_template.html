@@ -26,10 +26,10 @@
             <a href="/games" class="nav-item">
                 <i class="fas fa-gamepad"></i> <span>Games</span>
             </a>
-            <a href="/about" class="nav-item">
+            <a href="{{ about_url }}" class="nav-item">
                 <i class="fas fa-info-circle"></i> <span>About Us</span>
             </a>
-            <a href="/contact" class="nav-item">
+            <a href="{{ contact_url }}" class="nav-item">
                 <i class="fas fa-envelope"></i> <span>Contact Us</span>
             </a>
         </div>
@@ -94,10 +94,10 @@
         <footer class="footer">
             <div class="footer-content">
                 <div class="footer-links">
-                    <a href="/pages/terms.html" class="footer-link">Terms & Conditions</a>
-                    <a href="/pages/privacy.html" class="footer-link">Privacy Policy</a>
-                    <a href="/pages/cookies.html" class="footer-link">Cookie Policy</a>
-                    <a href="/pages/responsible.html" class="footer-link">Responsible Social Gaming</a>
+                    <a href="{{ terms_url }}" class="footer-link">Terms & Conditions</a>
+                    <a href="{{ privacy_url }}" class="footer-link">Privacy Policy</a>
+                    <a href="{{ cookies_url }}" class="footer-link">Cookie Policy</a>
+                    <a href="{{ responsible_url }}" class="footer-link">Responsible Social Gaming</a>
                 </div>
                 <div class="footer-bottom">
                     <p><strong>Disclaimer:</strong> {{ footer.disclaimer.text }}</p>
