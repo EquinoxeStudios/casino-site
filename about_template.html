@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - {{ site_name }}</title>
+    <link rel="canonical" href="{{ canonical_url }}" />
+    <link rel="icon" type="image/png" href="{{ favicon }}">
+    <!-- Load Font properly -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ primary_font | replace(' ', '+') }}:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">{{ site_name }}</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i> <span>Home</span>
+            </a>
+            <a href="/games" class="nav-item">
+                <i class="fas fa-gamepad"></i> <span>Games</span>
+            </a>
+            <a href="/about" class="nav-item active">
+                <i class="fas fa-info-circle"></i> <span>About Us</span>
+            </a>
+            <a href="/contact" class="nav-item">
+                <i class="fas fa-envelope"></i> <span>Contact Us</span>
+            </a>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </nav>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper" id="mainWrapper">
+
+        <!-- Page Header -->
+        <section class="page-header">
+            <h1>About {{ site_name }}</h1>
+            <p>Learn more about our mission, values, and the team behind {{ site_name }}.</p>
+        </section>
+
+        <!-- About Content -->
+        <section class="content-section">
+            <div class="content-wrapper">
+                {% for section in about_sections %}
+                <div class="about-block">
+                    <h2>{{ section.title }}</h2>
+                    <p>{{ section.body }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="/pages/terms.html" class="footer-link">Terms & Conditions</a>
+                    <a href="/pages/privacy.html" class="footer-link">Privacy Policy</a>
+                    <a href="/pages/cookies.html" class="footer-link">Cookie Policy</a>
+                    <a href="/pages/responsible.html" class="footer-link">Responsible Social Gaming</a>
+                </div>
+                <div class="footer-bottom">
+                    <p><strong>{{ footer.disclaimer.title }}:</strong> {{ footer.disclaimer.text }}</p>
+                    <p>&copy; {{ footer.copyright_year }} {{ footer.domain_name }}. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </main>
+</body>
+</html>

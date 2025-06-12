@@ -2293,14 +2293,18 @@ document.addEventListener('DOMContentLoaded', () => {
         Feel: {chosen_theme['target_feel']}
         
         Visual Requirements:
-        - Casino/gaming atmosphere
-        - Use these colors prominently: {colors['primary']}, {colors['secondary']}, {colors['accent']}
-        - Sophisticated and modern design
-        - Include subtle casino elements (slots, cards, dice, chips)
-        - Dark background with vibrant accents
-        - Professional gaming website aesthetic
-        - 16:9 aspect ratio, suitable for website hero section
-        - High visual impact with depth and atmosphere"""
+        - Overall art direction: glossy, neon-rich, high-saturation 2.5-D look inspired by Huuuge Casino key art
+          (bright rim-lights, chunky highlights, depth-of-field blur, floating confetti/coin particles)
+        - Respect the chosen theme and description above: keep core setting, characters and props faithful
+          (e.g. for “Temple of Anubis” retain sandstone pillars, Anubis statue, scarab gems, etc.)
+        - Integrate unmistakable social-casino motifs: 777 marquee signage, slot-reel symbols, gold-coin showers,
+          dice or poker chips—rendered in the Huuuge style
+        - Colour palette: start with {colors['primary']}, {colors['secondary']}, {colors['accent']} and push them to vivid, glowing neon values
+        - Composition: leave clean negative space in the upper-left quadrant for website headlines
+        - Background: dark-to-mid-tone gradient so foreground elements pop
+        - 16:9 aspect ratio, suitable for a website hero section
+        - Professional yet playful social-casino vibe with high visual impact and atmosphere
+        - ***Important: do **not** include any text, lettering or typography within the image***"""
     
         try:
             # Generate image using DALL-E
@@ -2740,6 +2744,91 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         self.log_debug(f"Template rendered successfully: {output_path}")
         return output_path
 
+    def generate_about_sections(self, site_name, domain_name):
+        """Generate structured About Us sections using GPT-4.1"""
+        prompt = f"""You must respond with ONLY valid JSON. No explanations, no markdown, just JSON.
+
+Generate an About Us page for a social casino website called "{site_name}" (domain: {domain_name}).
+Use this structure (return a JSON array of sections, each with a "title" and "body"):
+
+[
+  {{
+    "title": "Elevator Pitch / Who We Are",
+    "body": "One-sentence identity and core promise: free-to-play fun, not real-money gambling."
+  }},
+  {{
+    "title": "Mission & Values",
+    "body": "Entertainment-first focus, social connection, fairness & transparency."
+  }},
+  {{
+    "title": "How the Games Work",
+    "body": "Clarify the social-casino model: free virtual coins as primary currency, optional in-app purchases, no real-money payouts."
+  }},
+  {{
+    "title": "Fair Play & RNG Certification",
+    "body": "Build trust in game integrity: RNG provider or certification body, regular audits, anti-cheat systems."
+  }},
+  {{
+    "title": "Responsible Social Gaming",
+    "body": "Show you care about player well-being: age limit, spending controls, links to support, entertainment-only reminder."
+  }},
+  {{
+    "title": "Company Background",
+    "body": "Founding story, location(s), key team or leadership blurbs."
+  }}
+]
+
+Write each "body" in a friendly, up-tempo, trustworthy tone, 2-4 sentences per section, tailored to a social-casino audience. Do not include any HTML or markdown, just plain text.
+
+Return ONLY a JSON array of objects with "title" and "body".
+"""
+        response = self.client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[
+                {"role": "system", "content": "You are a JSON generator. Respond only with valid JSON, no explanations."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=900,
+            response_format={"type": "json_object"}
+        )
+        content = response.choices[0].message.content
+        sections = json.loads(content)
+        # If the response is a dict with a key, extract the array
+        if isinstance(sections, dict) and "sections" in sections:
+            sections = sections["sections"]
+        return sections
+
+    def generate_about_page(self, site_name, domain_name, base_data):
+        """Render the About Us page using generated sections"""
+        about_sections = self.generate_about_sections(site_name, domain_name)
+        # Post-process: change "Elevator Pitch / Who We Are" to "Who We Are"
+        for section in about_sections:
+            if section.get("title", "").strip().lower() == "elevator pitch / who we are":
+                section["title"] = "Who We Are"
+        about_data = {
+            **base_data,
+            "about_sections": about_sections,
+            "canonical_url": f"https://{domain_name}/about"
+        }
+        return self.render_template(
+            "about_template.html",
+            about_data,
+            "pages/about.html"
+        )
+
+    def generate_contact_page(self, site_name, domain_name, base_data):
+        """Render the Contact Us page"""
+        contact_data = {
+            **base_data,
+            "canonical_url": f"https://{domain_name}/contact"
+        }
+        return self.render_template(
+            "contact_template.html",
+            contact_data,
+            "pages/contact.html"
+        )
+
     def _get_head_includes(self, filename):
         """Get CSS includes based on the page type"""
         # Determine the path prefix based on file location
@@ -2759,7 +2848,7 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
         elif filename.startswith('games/'):
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/game.css">')
-        elif any(page in filename for page in ['terms', 'privacy', 'cookies', 'responsible']):
+        elif any(page in filename for page in ['terms', 'privacy', 'cookies', 'responsible', 'about', 'contact']):
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/legal.css">')
         
         return '\n'.join(includes)
@@ -2869,7 +2958,7 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             'footer': {
                 'disclaimer': {
                     'title': 'Disclaimer',
-                    'text': content['disclaimer']
+                    'text': f"The domain ({domain_name}) is a website designed solely for entertainment purposes where users can play games without risking any real money. It does not involve any form of 'real-money gambling' or provide chances to earn actual money based on gameplay."
                 },
                 'copyright_year': datetime.now().year,
                 'domain_name': domain_name
@@ -2887,7 +2976,7 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
                 'background_image': hero_image,
                 'overlay_opacity': 0.6,
                 'cta_text': content['cta_text'],
-                'cta_url': '/get-started',
+                'cta_url': '/games',
                 'cta_icon': 'fas fa-dice'
             },
             'content_sections': content['sections'],
@@ -2969,6 +3058,15 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             )
             game_paths.append(game_path)
         
+        # Step 12.1: Generate About Us and Contact Us Pages
+        print(f"👥 Generating About Us page...")
+        about_path = self.generate_about_page(site_name, domain_name, base_data)
+        print(f"✅ About Us page generated: {about_path}")
+
+        print(f"✉️  Generating Contact Us page...")
+        contact_path = self.generate_contact_page(site_name, domain_name, base_data)
+        print(f"✅ Contact Us page generated: {contact_path}")
+
         # Step 13: Generate Summary
         print("\n" + "=" * 60)
         print("🎉 COMPLETE WEBSITE GENERATED SUCCESSFULLY!")
@@ -2977,10 +3075,12 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         print(f"🎮 Games Page: {games_page_path}")
         print(f"📄 Legal Pages: {len(legal_paths)} pages generated")
         print(f"🕹️  Game Pages: {len(game_paths)} individual game pages")
+        print(f"👥 About Us Page: {about_path}")
+        print(f"✉️  Contact Us Page: {contact_path}")
         print(f"🎨 CSS Files: {len(list(self.css_dir.glob('*.css')))} files")
         print(f"📜 JS Files: {len(list(self.js_dir.glob('*.js')))} files")
         print(f"🖼️  Images Directory: {self.images_dir}")
-        print(f"📁 Total Files Generated: {2 + len(legal_paths) + len(game_paths) + 8}")  # +8 for CSS/JS files
+        print(f"📁 Total Files Generated: {4 + len(legal_paths) + len(game_paths) + 8}")  # +8 for CSS/JS files, +2 for about/contact
         print(f"🎨 Theme: {chosen_theme['name']}")
         print(f"🎨 Primary Color: {colors['primary']}")
         print(f"🔤 Font: {selected_font}")
@@ -2993,9 +3093,11 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             'games_page': games_page_path,
             'legal_pages': legal_paths,
             'game_pages': game_paths,
+            'about_page': about_path,
+            'contact_page': contact_path,
             'css_files': list(self.css_dir.glob('*.css')),
             'js_files': list(self.js_dir.glob('*.js')),
-            'total_files': 2 + len(legal_paths) + len(game_paths) + 8,
+            'total_files': 4 + len(legal_paths) + len(game_paths) + 8,
             'theme': chosen_theme,
             'colors': colors,
             'font': selected_font,
