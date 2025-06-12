@@ -85,6 +85,7 @@ class CompleteWebsiteGenerator:
     --accent-color: {colors['accent']};
     --background-start: {colors.get('background_start', '#0a0a0a')};
     --background-end: {colors.get('background_end', '#16213e')};
+    --text-color: {colors.get('text_color', '#fff')};
     
     /* Dynamic Gradients */
     --primary-gradient: linear-gradient(45deg, {colors['primary']}, {colors['secondary']});
@@ -158,7 +159,7 @@ class CompleteWebsiteGenerator:
 body {{
     font-family: var(--primary-font);
     line-height: 1.6;
-    color: #fff;
+    color: var(--text-color);
     background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
     min-height: 100vh;
     overflow-x: hidden;
@@ -208,7 +209,8 @@ body {{
     display: flex;
     align-items: center;
     padding: var(--space-md) var(--space-lg);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-color);
+    opacity: 0.8;
     text-decoration: none;
     transition: all 0.3s ease;
     border-left: 3px solid transparent;
@@ -219,7 +221,7 @@ body {{
 
 .nav-item:hover, .nav-item.active {{
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--text-color);
     border-left-color: var(--primary-color);
     transform: translateX(var(--space-xs));
 }}
@@ -339,7 +341,8 @@ body {{
 }}
 
 .footer-link {{
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     text-decoration: none;
     transition: color 0.3s ease;
     font-size: var(--font-sm);
@@ -356,7 +359,8 @@ body {{
 .footer-bottom {{
     padding-top: var(--space-xl);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
+    opacity: 0.5;
     font-size: var(--font-sm);
     line-height: 1.6;
 }}
@@ -585,7 +589,7 @@ function handleImageError(img) {
     
     // If fallback also fails, show styled error state
     img.style.display = 'flex';
-    img.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.6); text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🎰</div><div style="font-size: 0.8rem;">Game Image</div></div>';
+    img.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-color); opacity: 0.6; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🎰</div><div style="font-size: 0.8rem;">Game Image</div></div>';
 }
 
 function generateFallbackImage(gameTitle) {
@@ -722,7 +726,8 @@ window.addEventListener('load', () => {
 
 .hero p {
     font-size: var(--font-lg);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-color);
+    opacity: 0.8;
     margin-bottom: var(--space-xl);
     line-height: 1.6;
 }
@@ -757,7 +762,8 @@ window.addEventListener('load', () => {
 }
 
 .section-subtitle {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     font-size: var(--font-base);
     max-width: var(--content-max);
     margin: 0 auto;
@@ -955,7 +961,8 @@ window.addEventListener('load', () => {
 
 .about-content p {
     font-size: var(--font-base);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-color);
+    opacity: 0.8;
     margin-bottom: var(--space-lg);
     line-height: 1.7;
 }
@@ -1031,7 +1038,8 @@ window.addEventListener('load', () => {
 
 .games-header p {
     font-size: var(--font-lg);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     max-width: var(--content-max);
     margin: 0 auto var(--space-lg);
     line-height: 1.6;
@@ -1113,7 +1121,8 @@ window.addEventListener('load', () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
+    opacity: 0.5;
     font-size: var(--font-sm);
     flex-direction: column;
 }
@@ -1249,7 +1258,8 @@ window.addEventListener('load', () => {
     align-items: center;
     gap: var(--space-xs);
     font-size: var(--font-sm);
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-color);
+    opacity: 0.6;
 }
 
 .breadcrumb a {
@@ -1263,7 +1273,8 @@ window.addEventListener('load', () => {
 }
 
 .breadcrumb-separator {
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-color);
+    opacity: 0.4;
     margin: 0 var(--space-xs);
 }
 
@@ -1289,7 +1300,8 @@ window.addEventListener('load', () => {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     font-size: var(--font-sm);
 }
 
@@ -1344,7 +1356,8 @@ window.addEventListener('load', () => {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     z-index: 10;
 }
 
@@ -1409,7 +1422,8 @@ window.addEventListener('load', () => {
 }
 
 .game-description p {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-color);
+    opacity: 0.8;
     line-height: 1.7;
     margin-bottom: var(--space-md);
 }
@@ -1477,7 +1491,8 @@ window.addEventListener('load', () => {
 
 .similar-game-provider {
     font-size: var(--font-sm);
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-color);
+    opacity: 0.6;
 }
 
 /* Mobile Responsive */
@@ -1548,7 +1563,8 @@ window.addEventListener('load', () => {
 
 .page-header p {
     font-size: var(--font-lg);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    opacity: 0.7;
     max-width: var(--content-max);
     margin: 0 auto;
     line-height: 1.6;
@@ -1588,7 +1604,8 @@ window.addEventListener('load', () => {
 
 .content-wrapper p {
     font-size: var(--font-base);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
+    opacity: 0.9;
     margin-bottom: var(--space-md);
     line-height: 1.7;
     text-align: justify;
@@ -1601,7 +1618,8 @@ window.addEventListener('load', () => {
 
 .content-wrapper li {
     font-size: var(--font-base);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
+    opacity: 0.9;
     margin-bottom: var(--space-xs);
     line-height: 1.7;
 }
@@ -1616,7 +1634,8 @@ window.addEventListener('load', () => {
     margin-top: var(--space-xl);
     padding-top: var(--space-lg);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-color);
+    opacity: 0.6;
     font-size: var(--font-sm);
     font-style: italic;
 }
@@ -1942,7 +1961,7 @@ function showError() {
     const loadingElement = document.getElementById('gameLoading');
     if (loadingElement) {
         loadingElement.innerHTML = `
-            <div style="text-align: center; color: rgba(255,255,255,0.7);">
+            <div style="text-align: center; color: var(--text-color); opacity: 0.7;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; color: #ff6b6b;"></i>
                 <p>Unable to load the game. Please try again later.</p>
                 <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-gradient); border: none; border-radius: 8px; color: white; cursor: pointer;">
@@ -2155,18 +2174,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return validated_game
     
     def fetch_slotslaunch_games(self, count=10):
-        """Fetch games from SlotsLaunch API with enhanced error handling and concurrent image downloads"""
-        self.log_debug(f"Fetching {count} games from SlotsLaunch API...")
-        
+        """Fetch games from SlotsLaunch API with enhanced error handling and concurrent image downloads.
+        Ensures no more than one game is imported from the same API response page for true randomness."""
+        self.log_debug(f"Fetching {count} games from SlotsLaunch API (one per page)...")
+
         url = f"{self.slotslaunch_base_url}/games"
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Origin': self.default_domain,
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        
+
+        # Get meta info to determine last_page
         initial_params = {
             'token': self.slotslaunch_token,
             'page': 1,
@@ -2175,87 +2196,89 @@ document.addEventListener('DOMContentLoaded', () => {
             'order': 'asc',
             'order_by': 'name'
         }
-        
-        self.log_debug("Making initial API request...")
+
+        self.log_debug("Making initial API request for meta info...")
         self.respect_rate_limit()
-        
         response = requests.get(url, params=initial_params, headers=headers, timeout=15)
         self.log_debug(f"API Response Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            meta = data.get('meta', {})
-            last_page = meta.get('last_page', 1)
-            total_games = meta.get('total', 0)
-            
-            self.log_debug(f"API Meta: {total_games} total games across {last_page} pages")
-            
-            if last_page == 0 or total_games == 0:
-                self.log_debug("No games found from API")
-                return []
-            
-            all_games = []
-            pages_to_fetch = min(3, last_page)
-            
-            for _ in range(pages_to_fetch):
-                random_page = random.randint(1, min(last_page, 50))
-                
-                final_params = {
-                    'token': self.slotslaunch_token,
-                    'page': random_page,
-                    'per_page': count,
-                    'published': 1,
-                    'order': 'random'
-                }
-                
-                self.log_debug(f"Fetching page {random_page}...")
-                self.respect_rate_limit()
-                
-                page_response = requests.get(url, params=final_params, headers=headers, timeout=15)
-                if page_response.status_code == 200:
-                    page_data = page_response.json()
-                    page_games = page_data.get('data', [])
-                    
-                    for game in page_games:
-                        validated_game = self.validate_game_data(game)
-                        if validated_game and not any(g['slug'] == validated_game['slug'] for g in all_games):
-                            all_games.append(validated_game)
-                            self.log_debug(f"Added game: {validated_game['title']}")
-                            
-                            if len(all_games) >= count:
-                                break
-                
-                if len(all_games) >= count:
-                    break
-            
-            if len(all_games) > count:
-                all_games = random.sample(all_games, count)
-            
-            # Download images concurrently
-            self.log_debug(f"Downloading images for {len(all_games)} games concurrently...")
-            image_tasks = {}
-            for game in all_games:
-                if game['image_url']:
-                    image_filename = f"{self.sanitize_filename(game['slug'])}.jpg"
-                    image_tasks[game['slug']] = (game['image_url'], image_filename)
-            
-            image_results = self.download_images_concurrently(image_tasks)
-            
-            # Update games with downloaded image paths
-            for game in all_games:
-                if game['slug'] in image_results and image_results[game['slug']]:
-                    game['image'] = image_results[game['slug']]
-                else:
-                    game['image'] = "images/games/placeholder.jpg"
-                # Remove temporary image_url field
-                game.pop('image_url', None)
-            
-            self.log_debug(f"Successfully processed {len(all_games)} valid games")
-            return all_games
-            
-        else:
+
+        if response.status_code != 200:
             self.log_debug(f"API Error {response.status_code}: {response.text[:200]}")
             return []
+
+        data = response.json()
+        meta = data.get('meta', {})
+        last_page = meta.get('last_page', 1)
+        total_games = meta.get('total', 0)
+
+        self.log_debug(f"API Meta: {total_games} total games across {last_page} pages")
+
+        if last_page == 0 or total_games == 0:
+            self.log_debug("No games found from API")
+            return []
+
+        all_games = []
+        used_slugs = set()
+        used_pages = set()
+        max_attempts = max(count * 3, 10)
+        attempts = 0
+
+        while len(all_games) < count and attempts < max_attempts and len(used_pages) < last_page:
+            # Pick a random page not used yet
+            available_pages = set(range(1, min(last_page, 50) + 1)) - used_pages
+            if not available_pages:
+                break
+            random_page = random.choice(list(available_pages))
+            used_pages.add(random_page)
+
+            final_params = {
+                'token': self.slotslaunch_token,
+                'page': random_page,
+                'per_page': 20,
+                'published': 1,
+                'order': 'random'
+            }
+
+            self.log_debug(f"Fetching page {random_page} for unique game...")
+            self.respect_rate_limit()
+            page_response = requests.get(url, params=final_params, headers=headers, timeout=15)
+            if page_response.status_code == 200:
+                page_data = page_response.json()
+                page_games = page_data.get('data', [])
+                random.shuffle(page_games)
+                for game in page_games:
+                    validated_game = self.validate_game_data(game)
+                    if validated_game and validated_game['slug'] not in used_slugs:
+                        all_games.append(validated_game)
+                        used_slugs.add(validated_game['slug'])
+                        self.log_debug(f"Added game from page {random_page}: {validated_game['title']}")
+                        break  # Only one game per page
+            attempts += 1
+
+        if len(all_games) > count:
+            all_games = random.sample(all_games, count)
+
+        # Download images concurrently
+        self.log_debug(f"Downloading images for {len(all_games)} games concurrently...")
+        image_tasks = {}
+        for game in all_games:
+            if game['image_url']:
+                image_filename = f"{self.sanitize_filename(game['slug'])}.jpg"
+                image_tasks[game['slug']] = (game['image_url'], image_filename)
+
+        image_results = self.download_images_concurrently(image_tasks)
+
+        # Update games with downloaded image paths
+        for game in all_games:
+            if game['slug'] in image_results and image_results[game['slug']]:
+                game['image'] = image_results[game['slug']]
+            else:
+                game['image'] = "images/games/placeholder.jpg"
+            # Remove temporary image_url field
+            game.pop('image_url', None)
+
+        self.log_debug(f"Successfully processed {len(all_games)} valid games (one per page)")
+        return all_games
     
     def generate_hero_image(self, chosen_theme, site_name, colors):
         """Generate a hero image using GPT's DALL-E based on the theme"""
@@ -2263,22 +2286,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         # Create a detailed prompt for DALL-E based on the theme
         dalle_prompt = f"""Create a high-quality hero banner image for a social casino website with the following theme:
-
-Theme: {chosen_theme['name']}
-Description: {chosen_theme['description']}
-Mood: {', '.join(chosen_theme['mood'])}
-Feel: {chosen_theme['target_feel']}
-
-Visual Requirements:
-- Casino/gaming atmosphere
-- Use these colors prominently: {colors['primary']}, {colors['secondary']}, {colors['accent']}
-- Sophisticated and modern design
-- Include subtle casino elements (slots, cards, dice, chips)
-- Dark background with vibrant accents
-- Professional gaming website aesthetic
-- 16:9 aspect ratio, suitable for website hero section
-- High visual impact with depth and atmosphere"""
-
+        
+        Theme: {chosen_theme['name']}
+        Description: {chosen_theme['description']}
+        Mood: {', '.join(chosen_theme['mood'])}
+        Feel: {chosen_theme['target_feel']}
+        
+        Visual Requirements:
+        - Casino/gaming atmosphere
+        - Use these colors prominently: {colors['primary']}, {colors['secondary']}, {colors['accent']}
+        - Sophisticated and modern design
+        - Include subtle casino elements (slots, cards, dice, chips)
+        - Dark background with vibrant accents
+        - Professional gaming website aesthetic
+        - 16:9 aspect ratio, suitable for website hero section
+        - High visual impact with depth and atmosphere"""
+    
         try:
             # Generate image using DALL-E
             response = self.client.images.generate(
@@ -2311,6 +2334,50 @@ Visual Requirements:
             
         except Exception as e:
             self.log_debug(f"Error generating hero image with DALL-E: {e}")
+            raise
+
+    def generate_favicon(self, chosen_theme, site_name, colors):
+        """Generate a favicon using GPT's DALL-E based on the theme"""
+        self.log_debug(f"Generating favicon using DALL-E for theme: {chosen_theme['name']}")
+        # Create a prompt for a simple, square, casino-themed favicon
+        dalle_prompt = f'''Create a simple, square favicon for a social casino website.
+Theme: {chosen_theme['name']}
+Description: {chosen_theme['description']}
+Mood: {', '.join(chosen_theme['mood'])}
+Feel: {chosen_theme['target_feel']}
+
+Visual Requirements:
+- 1:1 aspect ratio (square), 512x512px
+- Minimal, bold, and easily recognizable at small sizes
+- Use these colors: {colors['primary']}, {colors['secondary']}, {colors['accent']}
+- Should include a casino/gaming element (e.g., slot machine, dice, card, chip, or similar)
+- No text, no gradients, no background details, just a clean icon
+- Transparent background
+- Suitable for use as a website favicon
+'''
+        try:
+            response = self.client.images.generate(
+                model="dall-e-3",
+                prompt=dalle_prompt,
+                size="1024x1024",
+                quality="standard",
+                n=1
+            )
+            image_url = response.data[0].url
+            self.log_debug(f"DALL-E generated favicon URL: {image_url[:50]}...")
+            favicon_filename = "favicon.png"
+            favicon_path = self.output_dir / favicon_filename
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            img_response = requests.get(image_url, timeout=30, headers=headers)
+            img_response.raise_for_status()
+            with open(favicon_path, 'wb') as f:
+                f.write(img_response.content)
+            self.log_debug(f"Favicon saved: {favicon_filename}")
+            return favicon_filename
+        except Exception as e:
+            self.log_debug(f"Error generating favicon with DALL-E: {e}")
             raise
     
     def hex_to_rgb(self, hex_color):
@@ -2386,29 +2453,32 @@ Return JSON in exactly this form:
         """Generate complete color palette based on chosen theme"""
         prompt = f"""You must respond with ONLY valid JSON. No explanations, no markdown, just JSON.
 
-Generate a cohesive color palette for this casino website theme:
-Name: {chosen_theme['name']}
-Description: {chosen_theme['description']}
-Mood: {', '.join(chosen_theme['mood'])}
-Target Feel: {chosen_theme['target_feel']}
+        Generate a cohesive color palette for this casino website theme:
+        Name: {chosen_theme['name']}
+        Description: {chosen_theme['description']}
+        Mood: {', '.join(chosen_theme['mood'])}
+        Target Feel: {chosen_theme['target_feel']}
 
-Use colors that work well together and are casino-appropriate.
+        Use colors that work well together and are casino-appropriate.
 
-Return exactly this JSON structure with hex colors:
-{{
-    "primary": "#hex",
-    "secondary": "#hex", 
-    "accent": "#hex",
-    "background_start": "#hex",
-    "background_end": "#hex",
-    "primary_hover": "#hex",
-    "secondary_hover": "#hex",
-    "sidebar_start": "#hex",
-    "sidebar_end": "#hex",
-    "footer_bg": "#hex",
-    "about_bg_start": "rgba(r, g, b, 0.05)",
-    "about_bg_end": "rgba(r, g, b, 0.05)"
-}}"""
+        Also, select a highly readable font color for the main text (either "#ffffff" for light text or "#000000" for dark text, or another color if it provides better contrast with the background). This color will be used for all main body and paragraph text. Name this property "text_color".
+
+        Return exactly this JSON structure with hex colors:
+        {{
+            "primary": "#hex",
+            "secondary": "#hex",
+            "accent": "#hex",
+            "background_start": "#hex",
+            "background_end": "#hex",
+            "primary_hover": "#hex",
+            "secondary_hover": "#hex",
+            "sidebar_start": "#hex",
+            "sidebar_end": "#hex",
+            "footer_bg": "#hex",
+            "about_bg_start": "rgba(r, g, b, 0.05)",
+            "about_bg_end": "rgba(r, g, b, 0.05)",
+            "text_color": "#hex"
+        }}"""
         
         response = self.client.chat.completions.create(
             model="gpt-4.1",
@@ -2569,7 +2639,7 @@ For social casino context:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=3800,
+            max_tokens=4096,  # Increased to maximize output for large legal pages
             response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content
@@ -2774,6 +2844,11 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         print(f"🖼️ Generating hero background image with DALL-E...")
         hero_image = self.generate_hero_image(chosen_theme, site_name, colors)
         print(f"✅ Hero image generated: {hero_image}")
+
+        # Step 5.1: Generate favicon using DALL-E
+        print(f"🔖 Generating favicon with DALL-E...")
+        favicon_filename = self.generate_favicon(chosen_theme, site_name, colors)
+        print(f"✅ Favicon generated: {favicon_filename}")
         
         # Step 6: Generate content (includes fetching real games)
         print(f"✍️  Generating website content and fetching games...")
@@ -2790,6 +2865,7 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
             'site_name': site_name,
             'primary_font': selected_font,
             'colors': colors,  # Now includes all required colors
+            'favicon': favicon_filename,
             'footer': {
                 'disclaimer': {
                     'title': 'Disclaimer',
