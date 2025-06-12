@@ -2851,10 +2851,14 @@ Return ONLY a JSON array of objects with "title" and "body".
             or filename == "index.php"
         ):
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/homepage.css">')
-        elif filename.endswith('games.html') and 'games/' not in filename:
+        # Games listing page (games.html or games/index.php)
+        elif filename == "games.html" or filename == "games/index.php":
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
+        # Individual game pages (games/slug.html or games/slug/index.php)
         elif filename.startswith('games/'):
-            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/game.css">')
+            # Only include game.css if not the games index page
+            if filename != "games/index.php":
+                includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/game.css">')
         elif any(page in filename for page in ['terms', 'privacy', 'cookies', 'responsible', 'about', 'contact']):
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/legal.css">')
         
