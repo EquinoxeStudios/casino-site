@@ -2318,32 +2318,7 @@ Visual Requirements:
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     
-    def clean_json_response(self, content):
-        """Clean and extract JSON from API response"""
-        if not content:
-            return None
-            
-        content = re.sub(r'```json\s*', '', content)
-        content = re.sub(r'```\s*$', '', content)
-        
-        json_match = re.search(r'(\[.*\]|\{.*\})', content, re.DOTALL)
-        if json_match:
-            content = json_match.group(1)
-        
-        content = content.strip()
-
-        # Escape invalid backslashes that are not part of a valid JSON escape sequence
-        content = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', content)
-
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError as e:
-            print("❌ JSONDecodeError in clean_json_response:")
-            print("---- RAW CONTENT START ----")
-            print(content[:1000])
-            print("---- RAW CONTENT END ----")
-            print(f"Error: {e}")
-            raise
+    # clean_json_response is now obsolete; use json.loads directly everywhere.
     
     def generate_theme_ideas(self, domain_name):
         """Generate 3 theme ideas for the social casino website"""
@@ -2351,7 +2326,7 @@ Visual Requirements:
         
         prompt = f"""You must respond with ONLY valid JSON. No explanations, no markdown, just JSON.
 
-Generate 3 unique SOCIAL CASINO themed website ideas for {domain_name}. 
+Generate 3 unique SOCIAL CASINO themed website ideas for {domain_name}.
 Analyze the domain name "{site_name}" and create casino/slots themes based on its meaning.
 
 Your themes should be:
@@ -2360,28 +2335,30 @@ Your themes should be:
 - Based on the domain name meaning
 - Exciting and engaging for players
 
-Return exactly this JSON structure:
-[
-    {{
-        "name": "Themed Casino Name",
-        "description": "Detailed visual casino theme description with specific imagery",
-        "mood": ["exciting", "luxurious", "mystical"],
-        "target_feel": "thrilling and immersive gaming experience"
-    }},
-    {{
-        "name": "Second Themed Casino",
-        "description": "Another detailed visual casino theme with different imagery",
-        "mood": ["vibrant", "energetic", "fun"],
-        "target_feel": "exciting and entertaining gaming adventure"
-    }},
-    {{
-        "name": "Third Themed Casino",
-        "description": "Third detailed visual casino theme with unique imagery",
-        "mood": ["elegant", "sophisticated", "premium"],
-        "target_feel": "high-end luxury gaming experience"
-    }}
-]"""
-        
+Return JSON in exactly this form:
+{{
+    "themes": [
+        {{
+            "name": "Themed Casino Name",
+            "description": "Detailed visual casino theme description with specific imagery",
+            "mood": ["exciting", "luxurious", "mystical"],
+            "target_feel": "thrilling and immersive gaming experience"
+        }},
+        {{
+            "name": "Second Themed Casino",
+            "description": "Another detailed visual casino theme with different imagery",
+            "mood": ["vibrant", "energetic", "fun"],
+            "target_feel": "exciting and entertaining gaming adventure"
+        }},
+        {{
+            "name": "Third Themed Casino",
+            "description": "Third detailed visual casino theme with unique imagery",
+            "mood": ["elegant", "sophisticated", "premium"],
+            "target_feel": "high-end luxury gaming experience"
+        }}
+    ]
+}}"""
+
         response = self.client.chat.completions.create(
             model="gpt-4-1106-preview",
             messages=[
@@ -2389,13 +2366,20 @@ Return exactly this JSON structure:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.8,
-            max_tokens=1000
+            max_tokens=1000,
+            response_format={"type": "json_object"}
         )
-        
+
         content = response.choices[0].message.content
         self.log_debug(f"Raw theme response: {repr(content[:100])}...")
-        
-        themes = self.clean_json_response(content)
+
+        obj = json.loads(content)
+        if isinstance(obj, list):
+            themes = obj
+        elif isinstance(obj, dict) and "themes" in obj:
+            themes = obj["themes"]
+        else:
+            raise ValueError("generate_theme_ideas: unexpected JSON")
         return themes[:3]
     
     def generate_color_palette(self, chosen_theme):
@@ -2433,27 +2417,28 @@ Return exactly this JSON structure with hex colors:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=500
+            max_tokens=500,
+            response_format={"type": "json_object"}
         )
         
         content = response.choices[0].message.content
-        colors = self.clean_json_response(content)
-        
+        colors = json.loads(content)
+
         # Ensure hover colors are set
         if 'primary_hover' not in colors:
             colors['primary_hover'] = self.darken_color(colors['primary'], 0.1)
         if 'secondary_hover' not in colors:
             colors['secondary_hover'] = self.darken_color(colors['secondary'], 0.1)
-        
+
         # Generate about section background colors if not provided
         if 'about_bg_start' not in colors:
             primary_rgb = self.hex_to_rgb(colors['primary'])
             colors['about_bg_start'] = f"rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.05)"
-        
+
         if 'about_bg_end' not in colors:
             accent_rgb = self.hex_to_rgb(colors['accent'])
             colors['about_bg_end'] = f"rgba({accent_rgb[0]}, {accent_rgb[1]}, {accent_rgb[2]}, 0.05)"
-        
+
         return colors
     
     def darken_color(self, hex_color, factor=0.1):
@@ -2511,15 +2496,16 @@ Return exactly this JSON structure:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.8,
-            max_tokens=1000
+            max_tokens=1000,
+            response_format={"type": "json_object"}
         )
         
         content = response.choices[0].message.content
-        data = self.clean_json_response(content)
-        
+        data = json.loads(content)
+
         data['sections'][0]['items'] = featured_games
         data['sections'][1]['items'] = new_games
-        
+
         self.log_debug(f"Content generated successfully with games")
         return data
     
@@ -2583,10 +2569,11 @@ For social casino context:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=2000
+            max_tokens=2000,
+            response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content
-        page_data = self.clean_json_response(content)
+        page_data = json.loads(content)
         # Replace escaped newlines with real newlines for HTML rendering
         if 'content' in page_data:
             page_data['content'] = page_data['content'].replace('\\n', '\n')
