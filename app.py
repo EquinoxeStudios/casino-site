@@ -2523,44 +2523,50 @@ Return exactly this JSON structure:
         self.log_debug(f"Content generated successfully with games")
         return data
     
-    def generate_all_legal_content(self, site_name, domain_name):
-        """Generate all legal content in a single optimized API call"""
-        prompt = f"""Generate comprehensive legal content for the social casino website "{site_name}" (domain: {domain_name}).
+    def generate_legal_page_content(self, site_name, domain_name, page_type):
+        """Generate a single legal page (terms, privacy, cookies, responsible) via API call"""
+        page_prompts = {
+            "terms": {
+                "title": "Terms & Conditions",
+                "subtitle": "Please read these terms carefully before using our services",
+                "desc": "Full HTML-formatted terms content (1500-2000 words)..."
+            },
+            "privacy": {
+                "title": "Privacy Policy",
+                "subtitle": "Your privacy is important to us",
+                "desc": "Full HTML-formatted privacy policy content (1500-2000 words)..."
+            },
+            "cookies": {
+                "title": "Cookie Policy",
+                "subtitle": "How we use cookies to improve your experience",
+                "desc": "Full HTML-formatted cookie policy content (1000-1500 words)..."
+            },
+            "responsible": {
+                "title": "Responsible Social Gaming",
+                "subtitle": "Gaming should always be fun and responsible",
+                "desc": "Full HTML-formatted responsible gaming content (1000-1500 words)..."
+            }
+        }
+        meta = page_prompts[page_type]
+        prompt = f"""Generate the {meta['title']} page for the social casino website "{site_name}" (domain: {domain_name}).
 
 This is a SOCIAL CASINO website - no real money gambling involved, entertainment only.
 
-Generate ALL four legal pages in a single response. Structure the content with HTML formatting:
+Structure the content with HTML formatting:
 - Use <h2> for main sections
-- Use <h3> for subsections  
+- Use <h3> for subsections
 - Use <p> for paragraphs
 - Use <ul> and <li> for lists
 - Use <strong> for emphasis
 
-Return a JSON object with all four legal pages:
+Return a JSON object with this structure:
 {{
-    "terms": {{
-        "title": "Terms & Conditions",
-        "subtitle": "Please read these terms carefully before using our services",
-        "content": "Full HTML-formatted terms content (1500-2000 words)..."
-    }},
-    "privacy": {{
-        "title": "Privacy Policy", 
-        "subtitle": "Your privacy is important to us",
-        "content": "Full HTML-formatted privacy policy content (1500-2000 words)..."
-    }},
-    "cookies": {{
-        "title": "Cookie Policy",
-        "subtitle": "How we use cookies to improve your experience",
-        "content": "Full HTML-formatted cookie policy content (1000-1500 words)..."
-    }},
-    "responsible": {{
-        "title": "Responsible Social Gaming",
-        "subtitle": "Gaming should always be fun and responsible",
-        "content": "Full HTML-formatted responsible gaming content (1000-1500 words)..."
-    }}
+    "title": "{meta['title']}",
+    "subtitle": "{meta['subtitle']}",
+    "content": "{meta['desc']}"
 }}
 
-Make all content professional, legally sound, and comprehensive. Include all relevant sections for each policy type.
+Make all content professional, legally sound, and comprehensive. Include all relevant sections for this policy type.
 
 For social casino context:
 - No real money gambling
@@ -2568,8 +2574,8 @@ For social casino context:
 - No real prizes or cash-outs
 - Virtual currency/credits only
 - Age restriction (18+)
-- Data protection compliance"""
-        
+- Data protection compliance
+"""
         response = self.client.chat.completions.create(
             model="gpt-4-1106-preview",
             messages=[
@@ -2577,26 +2583,25 @@ For social casino context:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=3500
+            max_tokens=2000
         )
-        
         content = response.choices[0].message.content
-        legal_data = self.clean_json_response(content)
-        
-        self.log_debug(f"Generated all legal content in one call")
-        
-        # Process and return individual page data
+        page_data = self.clean_json_response(content)
+        self.log_debug(f"Generated {page_type} legal page")
+        return {
+            'page_title': page_data['title'],
+            'page_subtitle': page_data['subtitle'],
+            'page_type': page_type,
+            'content': page_data['content'],
+            'last_updated': datetime.now().strftime("%B %d, %Y")
+        }
+
+    def generate_all_legal_content(self, site_name, domain_name):
+        """Generate all legal content with separate API calls for each page"""
         legal_pages = {}
         for page_type in ['terms', 'privacy', 'cookies', 'responsible']:
-            page_data = legal_data[page_type]
-            legal_pages[page_type] = {
-                'page_title': page_data['title'],
-                'page_subtitle': page_data['subtitle'],
-                'page_type': page_type,
-                'content': page_data['content'],
-                'last_updated': datetime.now().strftime("%B %d, %Y")
-            }
-        
+            legal_pages[page_type] = self.generate_legal_page_content(site_name, domain_name, page_type)
+        self.log_debug(f"Generated all legal content with separate API calls")
         return legal_pages
     
     def select_theme_font(self, chosen_theme):
