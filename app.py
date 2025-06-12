@@ -2331,7 +2331,10 @@ Visual Requirements:
             content = json_match.group(1)
         
         content = content.strip()
-        
+
+        # Escape invalid backslashes that are not part of a valid JSON escape sequence
+        content = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', content)
+
         try:
             return json.loads(content)
         except json.JSONDecodeError as e:
@@ -2380,7 +2383,7 @@ Return exactly this JSON structure:
 ]"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a JSON generator. Respond only with valid JSON, no explanations."},
                 {"role": "user", "content": prompt}
@@ -2424,7 +2427,7 @@ Return exactly this JSON structure with hex colors:
 }}"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a color palette generator. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
@@ -2502,7 +2505,7 @@ Return exactly this JSON structure:
 }}"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a JSON generator. Respond only with valid JSON, no explanations."},
                 {"role": "user", "content": prompt}
@@ -2568,13 +2571,13 @@ For social casino context:
 - Data protection compliance"""
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a legal content writer specializing in social casino terms and policies. Generate comprehensive legal content."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=4000
+            max_tokens=3500
         )
         
         content = response.choices[0].message.content
@@ -2627,7 +2630,7 @@ Examples of Google Fonts to consider (but not limited to):
 Return ONLY the font name exactly as it appears in Google Fonts, nothing else."""
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a typography expert. Return only the font name, nothing else."},
                 {"role": "user", "content": prompt}
