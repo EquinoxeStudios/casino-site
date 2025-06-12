@@ -2587,6 +2587,9 @@ For social casino context:
         )
         content = response.choices[0].message.content
         page_data = self.clean_json_response(content)
+        # Replace escaped newlines with real newlines for HTML rendering
+        if 'content' in page_data:
+            page_data['content'] = page_data['content'].replace('\\n', '\n')
         self.log_debug(f"Generated {page_type} legal page")
         return {
             'page_title': page_data['title'],
