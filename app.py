@@ -2645,7 +2645,7 @@ For social casino context:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=4096,  # Increased to maximize output for large legal pages
+            max_tokens=8192,  # Increased to maximize output for large legal pages
             response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content
@@ -2844,7 +2844,12 @@ Return ONLY a JSON array of objects with "title" and "body".
         includes = [f'    <link rel="stylesheet" href="{path_prefix}assets/css/base.css">']
         
         # Add page-specific CSS based on filename
-        if 'homepage' in filename:
+        # Add homepage CSS for homepage files
+        if (
+            'homepage' in filename
+            or filename == "index.html"
+            or filename == "index.php"
+        ):
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/homepage.css">')
         elif filename.endswith('games.html') and 'games/' not in filename:
             includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
@@ -3174,6 +3179,23 @@ Return ONLY a JSON array of objects with "title" and "body".
             'sitemap': sitemap_path
         }
 
+    def generate_sitemap(self, urls, output_path=None):
+        """Generate a sitemap.xml file with all provided URLs"""
+        self.log_debug(f"Generating sitemap.xml with {len(urls)} URLs...")
+        sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        for url in urls:
+            sitemap_xml += f"  <url>\n    <loc>{url}</loc>\n  </url>\n"
+        sitemap_xml += '</urlset>\n'
+
+        if output_path is None:
+            output_path = self.output_dir / "sitemap.xml"
+        else:
+            output_path = Path(output_path)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(sitemap_xml)
+        self.log_debug(f"Sitemap generated: {output_path}")
+        return output_path
 
 def main():
     """Main function to run the complete website generator"""
