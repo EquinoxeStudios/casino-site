@@ -609,46 +609,7 @@ function initializeImageLoading() {
 }
 
 // Analytics Functions
-function trackGameClick(gameTitle, gameUrl, gameProvider) {
-    // Enhanced analytics tracking for game clicks
-    console.log(`🎮 Game clicked: ${gameTitle} by ${gameProvider} (${gameUrl})`);
-    
-    // Track with multiple analytics services
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'game_click', {
-            'game_title': gameTitle,
-            'game_provider': gameProvider,
-            'game_url': gameUrl,
-            'event_category': 'games',
-            'event_label': `${gameTitle} - ${gameProvider}`
-        });
-    }
-    
-    // Facebook Pixel tracking
-    if (typeof fbq !== 'undefined') {
-        fbq('track', 'ViewContent', {
-            content_name: gameTitle,
-            content_category: 'game',
-            content_type: 'casino_game'
-        });
-    }
-    
-    // Add visual feedback
-    const clickedElement = event.target;
-    clickedElement.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        clickedElement.style.transform = '';
-    }, 150);
-    
-    // Show loading state briefly
-    const card = clickedElement.closest('.card, .game-card, .similar-game-card');
-    if (card) {
-        card.classList.add('loading');
-        setTimeout(() => {
-            card.classList.remove('loading');
-        }, 800);
-    }
-}
+// (trackGameClick removed)
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -2834,14 +2795,10 @@ Return ONLY a JSON array of objects with "title" and "body".
     def _get_head_includes(self, filename):
         """Get CSS includes based on the page type"""
         # Determine the path prefix based on file location
-        if filename.startswith('pages/'):
-            path_prefix = '../'
-        elif filename.startswith('games/'):
-            path_prefix = '../'
-        else:
-            path_prefix = ''
+        # Always use absolute paths for assets to ensure correct loading from any directory depth
+        path_prefix = '/'
         
-        includes = [f'    <link rel="stylesheet" href="{path_prefix}assets/css/base.css">']
+        includes = [f'    <link rel="stylesheet" href="/assets/css/base.css">']
         
         # Add page-specific CSS based on filename
         # Add homepage CSS for homepage files
@@ -2874,13 +2831,13 @@ Return ONLY a JSON array of objects with "title" and "body".
         else:
             path_prefix = ''
         
-        scripts = [f'    <script src="{path_prefix}assets/js/base.js"></script>']
+        scripts = [f'    <script src="/assets/js/base.js"></script>']
         
         # Add page-specific JS based on filename
         if 'homepage' in filename:
-            scripts.append(f'    <script src="{path_prefix}assets/js/homepage.js"></script>')
+            scripts.append(f'    <script src="/assets/js/homepage.js"></script>')
         elif filename.startswith('games/'):
-            scripts.append(f'    <script src="{path_prefix}assets/js/game.js"></script>')
+            scripts.append(f'    <script src="/assets/js/game.js"></script>')
         
         return '\n'.join(scripts)
 
@@ -2994,8 +2951,14 @@ Return ONLY a JSON array of objects with "title" and "body".
             'responsible_url': page_link("responsible", "/pages/"),
             'footer': {
                 'disclaimer': {
-                    'title': 'Disclaimer',
-                    'text': f"The domain ({domain_name}) is a website designed solely for entertainment purposes where users can play games without risking any real money. It does not involve any form of 'real-money gambling' or provide chances to earn actual money based on gameplay."
+                    'title': 'Disclaimer (18+ / Play Responsibly)',
+                    'text': (
+                        "This free‑to‑play social‑casino site is intended for persons aged 18 years and older (or the legal gambling age in your jurisdiction).\n"
+                        "• No real‑money gambling: all games use virtual currency only and do not offer prizes of real‑world value.\n"
+                        "• Optional in‑app purchases of virtual coins may be available.\n"
+                        "• Success at social‑casino games does not imply future success at real‑money gambling.\n"
+                        "If you or someone you know has a gambling problem, please seek help at www.begambleaware.org or call 1‑800‑522‑4700."
+                    )
                 },
                 'copyright_year': datetime.now().year,
                 'domain_name': domain_name
@@ -3019,7 +2982,8 @@ Return ONLY a JSON array of objects with "title" and "body".
             'content_sections': content['sections'],
             'about': {
                 'content': content['about_paragraphs']
-            }
+            },
+            'favicon_path': '/favicon.png'
         }
         # Add canonical URL for homepage
         homepage_data['canonical_url'] = f"https://{domain_name}/"
@@ -3046,7 +3010,9 @@ Return ONLY a JSON array of objects with "title" and "body".
             **base_data,
             'all_games': all_games,
             'total_games': len(all_games),
-            'canonical_url': f"https://{domain_name}/games"
+            'canonical_url': f"https://{domain_name}/games",
+            'path_prefix': '../' if site_type == "traffic_armor" else '',
+            'favicon_path': '../favicon.png' if site_type == "traffic_armor" else 'favicon.png'
         }
         games_page_path = self.render_template(
             'games_template.html',
@@ -3064,16 +3030,28 @@ Return ONLY a JSON array of objects with "title" and "body".
                 **legal_pages_data[page_type]
             }
             # Canonical URL for legal pages
-            if page_type == 'responsible':
-                canonical_url = f"https://{domain_name}/responsible-gaming"
+            if site_type == "traffic_armor":
+                canonical_url = f"https://{domain_name}/pages/{page_type}/"
             else:
-                canonical_url = f"https://{domain_name}/{page_type}"
+                canonical_url = f"https://{domain_name}/pages/{page_type}.html"
             legal_data['canonical_url'] = canonical_url
-
+        
+            # Determine output filename based on site_type
+            if site_type == "traffic_armor":
+                legal_filename = f"pages/{page_type}/index.php"
+            else:
+                legal_filename = f"pages/{page_type}.html"
+        
+            # Add favicon_path for legal pages
+            if site_type == "traffic_armor":
+                legal_data['favicon_path'] = "../../favicon.png"
+            else:
+                legal_data['favicon_path'] = "favicon.png"
+            
             legal_path = self.render_template(
                 'legal_template.html',
                 legal_data,
-                f"pages/{page_type}.html"
+                legal_filename
             )
             legal_paths.append(legal_path)
         
@@ -3091,7 +3069,8 @@ Return ONLY a JSON array of objects with "title" and "body".
                 **base_data,
                 'game': game,
                 'similar_games': similar_games,
-                'canonical_url': f"https://{domain_name}/games/{game['slug']}"
+                'canonical_url': f"https://{domain_name}/games/{game['slug']}",
+                'favicon_path': '../favicon.png' if site_type == "traffic_armor" else 'favicon.png'
             }
             if site_type == "traffic_armor":
                 game_filename = f"games/{game['slug']}/index.php"
@@ -3112,7 +3091,12 @@ Return ONLY a JSON array of objects with "title" and "body".
             about_filename = "pages/about.html"
         about_path = self.render_template(
             "about_template.html",
-            {**base_data, "about_sections": self.generate_about_sections(site_name, domain_name), "canonical_url": f"https://{domain_name}/about"},
+            {
+                **base_data,
+                "about_sections": self.generate_about_sections(site_name, domain_name),
+                "canonical_url": f"https://{domain_name}/about",
+                "favicon_path": "../../favicon.png" if site_type == "traffic_armor" else "favicon.png"
+            },
             about_filename
         )
         print(f"✅ About Us page generated: {about_path}")
@@ -3124,7 +3108,11 @@ Return ONLY a JSON array of objects with "title" and "body".
             contact_filename = "pages/contact.html"
         contact_path = self.render_template(
             "contact_template.html",
-            {**base_data, "canonical_url": f"https://{domain_name}/contact"},
+            {
+                **base_data,
+                "canonical_url": f"https://{domain_name}/contact",
+                "favicon_path": "../../favicon.png" if site_type == "traffic_armor" else "favicon.png"
+            },
             contact_filename
         )
         print(f"✅ Contact Us page generated: {contact_path}")
@@ -3159,10 +3147,10 @@ Return ONLY a JSON array of objects with "title" and "body".
         all_urls.append(f"https://{domain_name}/games")
         # Legal pages
         for page_type in ['terms', 'privacy', 'cookies', 'responsible']:
-            if page_type == 'responsible':
-                all_urls.append(f"https://{domain_name}/responsible-gaming")
+            if site_type == "traffic_armor":
+                all_urls.append(f"https://{domain_name}/pages/{page_type}/")
             else:
-                all_urls.append(f"https://{domain_name}/{page_type}")
+                all_urls.append(f"https://{domain_name}/pages/{page_type}.html")
         # About and Contact
         all_urls.append(f"https://{domain_name}/pages/about")
         all_urls.append(f"https://{domain_name}/pages/contact")

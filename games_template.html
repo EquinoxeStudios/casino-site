@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Games - {{ site_name }}</title>
     <link rel="canonical" href="{{ canonical_url }}" />
-    <link rel="icon" type="image/png" href="{{ favicon }}">
+    <link rel="icon" type="image/png" href="{{ favicon_path }}">
     <!-- Load Font properly -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,20 +61,19 @@
             <div class="games-grid">
                 {% for game in all_games %}
                 <div class="game-card" data-game-slug="{{ game.slug | default(game.url.split('/')[-1] if '/' in game.url else game.url) }}">
-                    <img src="{{ game.image }}" 
-                         alt="{{ game.title }}" 
-                         class="game-thumbnail" 
+                    <img src="{{ path_prefix }}{{ game.image }}"
+                         alt="{{ game.title }}"
+                         class="game-thumbnail"
                          loading="lazy"
                          onerror="handleImageError(this)"
                          onload="handleImageLoad(this)">
                     <div class="game-overlay">
                         <div class="game-info">
                             <h3 class="game-title">{{ game.title }}</h3>
-                            <a href="{{ game.url }}" 
-                               class="game-cta" 
+                            <a href="{{ game.url }}"
+                               class="game-cta"
                                data-game-title="{{ game.title }}"
-                               data-game-provider="{{ game.provider | default('Unknown') }}"
-                               onclick="trackGameClick('{{ game.title }}', '{{ game.url }}', '{{ game.provider | default('Unknown') }}')">
+                               data-game-provider="{{ game.provider | default('Unknown') }}">
                                {{ game.cta_text | default('Play Now') }}
                             </a>
                         </div>
