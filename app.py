@@ -2959,7 +2959,7 @@ Return ONLY a JSON array of objects with "title" and "body".
             'site_name': site_name,
             'primary_font': selected_font,
             'colors': colors,  # Now includes all required colors
-            'favicon': generator.randomize_image_filename(favicon_filename, "favicon"),
+            'favicon': self.randomize_image_filename(favicon_filename, "favicon"),
             # Universal URLs for sidebar/footer (work for both site types)
             'about_url': page_link("about", "/pages/"),
             'contact_url': page_link("contact", "/pages/"),
@@ -2991,7 +2991,7 @@ Return ONLY a JSON array of objects with "title" and "body".
             'hero': {
                 'title': content['hero_title'],
                 'description': content['hero_description'],
-                'background_image': generator.randomize_image_filename(hero_image, "hero"),
+                'background_image': self.randomize_image_filename(hero_image, "hero"),
                 'overlay_opacity': 0.6,
                 'cta_text': content['cta_text'],
                 'cta_url': '/games',

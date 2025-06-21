@@ -42,6 +42,14 @@ class UniqueWebsiteGenerator(CompleteWebsiteGenerator):
             "footer-link": ["footer-link", "footer-nav-item", "bottom-link", f"ft-link-{self.uniqueness_seed}"],
             "footer-bottom": ["footer-bottom", "footer-disclaimer", "bottom-text", f"ft-bottom-{self.uniqueness_seed}"],
         }
+        self.class_pools.update({
+            "mobile-sidebar-toggle": [
+                "mobile-sidebar-toggle", "mobile-toggle", "sidebar-mobile-btn", f"mobile-toggle-{self.uniqueness_seed}"
+            ],
+            "sidebar-overlay": [
+                "sidebar-overlay", "sidebar-dimmer", "nav-overlay", f"overlay-{self.uniqueness_seed}"
+            ]
+        })
         self.id_pools = {
             "sidebar": ["sidebar", "navSidebar", "sidePanel", f"sb-{self.uniqueness_seed}", "navigationDrawer"],
             "mainWrapper": ["mainWrapper", "contentWrap", "mainWrap", f"mw-{self.uniqueness_seed}", "pageWrapper"],
@@ -307,6 +315,8 @@ function {funcs['handleImageError']}(img) {{
     console.warn('Image load failed:', img.src);
 }}
 """
+        # No-op for compatibility with templates
+        js_content += "\nfunction trackGameClick() {}\n"
         base_js_path = self.js_dir / "base.js"
         with open(base_js_path, 'w', encoding='utf-8') as f:
             f.write(js_content)
@@ -326,8 +336,9 @@ function {funcs['handleImageError']}(img) {{
             "uniqueness_seed": self.uniqueness_seed,
             "unique_meta_tags": self.generate_unique_meta_tags(),
         })
-        # Add content randomizer to context
+        # Add content randomizer and DOM wrapper to context
         context["randomize_content_html"] = self.randomize_content_html
+        context["add_dom_depth_variation"] = self.add_dom_depth_variation
 
         html_output = super().render_template(template_filename, context, output_filename)
         with open(self.output_dir / output_filename, 'r', encoding='utf-8') as f:
