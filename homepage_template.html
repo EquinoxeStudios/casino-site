@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ unique_meta_tags|safe }}
     <title>{{ site_name }} - {{ site_tagline }}</title>
     <link rel="canonical" href="{{ canonical_url }}" />
     <link rel="icon" type="image/png" href="{{ favicon_path }}">
@@ -12,15 +12,25 @@
     <link href="https://fonts.googleapis.com/css2?family={{ primary_font | replace(' ', '+') }}:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+    :root {
+    {%- for var, value in unique_css_vars.items() %}
+        {{ var }}: {{ value }};
+    {%- endfor %}
+    }
+    </style>
 </head>
-<body>
+<body data-uniq="{{ uniqueness_seed }}">
     <!-- Sidebar -->
     {%- set sidebar_tag = get_element_tag('sidebar') -%}
+    {%- set dom_wrappers = add_dom_depth_variation('sidebar') -%}
+    {%- for wrap in dom_wrappers %}{{ wrap }}{%- endfor %}
     <{{ sidebar_tag }}
         class="{{ unique_classes.sidebar }}"
         id="{{ unique_ids.sidebar }}"
         style="{{ random_inline_style('sidebar', {'padding': 24, 'opacity': 0.8}) }}"
     >
+        <!-- Sidebar Start -->
         <div class="{{ unique_classes['sidebar-header'] }}">
             <div class="{{ unique_classes.logo }}">{{ site_name }}</div>
         </div>
@@ -38,19 +48,13 @@
                 <i class="fas fa-envelope"></i> <span>Contact Us</span>
             </a>
         </div>
-        <button class="{{ unique_classes['sidebar-toggle'] }}" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <button class="{{ unique_classes['sidebar-toggle'] }}" onclick="{{ func_names.toggleSidebar }}()" aria-label="Toggle sidebar">
             <i class="fas fa-chevron-left"></i>
         </button>
+        <!-- Sidebar End -->
     </{{ sidebar_tag }}>
-
-    <style>
-    /* Unique CSS variables for this site */
-    :root {
-    {%- for var, value in unique_css_vars.items() %}
-        {{ var }}: {{ value }};
-    {%- endfor %}
-    }
-    </style>
+    {%- for wrap in dom_wrappers|reverse %}</div>{%- endfor %}
+    <!-- Uniqueness: {{ uniqueness_seed }} -->
 
     <!-- Mobile Sidebar Toggle -->
     <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">

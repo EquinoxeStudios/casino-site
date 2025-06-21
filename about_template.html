@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ unique_meta_tags|safe }}
     <title>About Us - {{ site_name }}</title>
     <link rel="canonical" href="{{ canonical_url }}" />
     <link rel="icon" type="image/png" href="{{ favicon_path }}">
@@ -12,8 +12,15 @@
     <link href="https://fonts.googleapis.com/css2?family={{ primary_font | replace(' ', '+') }}:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+    :root {
+    {%- for var, value in unique_css_vars.items() %}
+        {{ var }}: {{ value }};
+    {%- endfor %}
+    }
+    </style>
 </head>
-<body>
+<body data-uniq="{{ uniqueness_seed }}">
     <!-- Sidebar -->
     <nav class="{{ unique_classes.sidebar }}" id="sidebar">
         <div class="{{ unique_classes['sidebar-header'] }}">
