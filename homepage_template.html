@@ -57,12 +57,12 @@
     <!-- Uniqueness: {{ uniqueness_seed }} -->
 
     <!-- Mobile Sidebar Toggle -->
-    <button class="{{ unique_classes['mobile-sidebar-toggle'] }}" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">
+    <button class="{{ unique_classes['mobile-sidebar-toggle'] }}" onclick="{{ func_names.toggleMobileSidebar }}()" id="mobileSidebarToggle" aria-label="Open menu">
         <i class="fas fa-bars"></i>
     </button>
 
     <!-- Sidebar Overlay for Mobile -->
-    <div class="{{ unique_classes['sidebar-overlay'] }}" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+    <div class="{{ unique_classes['sidebar-overlay'] }}" id="sidebarOverlay" onclick="{{ func_names.closeMobileSidebar }}()"></div>
 
     <!-- Main Wrapper -->
     <main class="main-wrapper" id="mainWrapper">

@@ -40,18 +40,18 @@
                 <i class="fas fa-envelope"></i> <span>Contact Us</span>
             </a>
         </div>
-        <button class="{{ unique_classes['sidebar-toggle'] }}" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <button class="{{ unique_classes['sidebar-toggle'] }}" onclick="{{ func_names.toggleSidebar }}()" aria-label="Toggle sidebar">
             <i class="fas fa-chevron-left"></i>
         </button>
     </nav>
 
     <!-- Mobile Sidebar Toggle -->
-    <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">
+    <button class="{{ unique_classes['mobile-sidebar-toggle'] }}" onclick="{{ func_names.toggleMobileSidebar }}()" id="mobileSidebarToggle" aria-label="Open menu">
         <i class="fas fa-bars"></i>
     </button>
 
     <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+    <div class="{{ unique_classes['sidebar-overlay'] }}" id="sidebarOverlay" onclick="{{ func_names.closeMobileSidebar }}()"></div>
 
     <!-- Main Wrapper -->
     <main class="main-wrapper" id="mainWrapper">
