@@ -15,28 +15,42 @@
 </head>
 <body>
     <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">{{ site_name }}</div>
+    {%- set sidebar_tag = get_element_tag('sidebar') -%}
+    <{{ sidebar_tag }}
+        class="{{ unique_classes.sidebar }}"
+        id="{{ unique_ids.sidebar }}"
+        style="{{ random_inline_style('sidebar', {'padding': 24, 'opacity': 0.8}) }}"
+    >
+        <div class="{{ unique_classes['sidebar-header'] }}">
+            <div class="{{ unique_classes.logo }}">{{ site_name }}</div>
         </div>
-        <div class="sidebar-nav">
-            <a href="/" class="nav-item active">
+        <div class="{{ unique_classes['sidebar-nav'] }}">
+            <a href="/" class="{{ unique_classes['nav-item'] }} active">
                 <i class="fas fa-home"></i> <span>Home</span>
             </a>
-            <a href="/games" class="nav-item">
+            <a href="/games" class="{{ unique_classes['nav-item'] }}">
                 <i class="fas fa-gamepad"></i> <span>Games</span>
             </a>
-            <a href="{{ about_url }}" class="nav-item">
+            <a href="{{ about_url }}" class="{{ unique_classes['nav-item'] }}">
                 <i class="fas fa-info-circle"></i> <span>About Us</span>
             </a>
-            <a href="{{ contact_url }}" class="nav-item">
+            <a href="{{ contact_url }}" class="{{ unique_classes['nav-item'] }}">
                 <i class="fas fa-envelope"></i> <span>Contact Us</span>
             </a>
         </div>
-        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <button class="{{ unique_classes['sidebar-toggle'] }}" onclick="toggleSidebar()" aria-label="Toggle sidebar">
             <i class="fas fa-chevron-left"></i>
         </button>
-    </nav>
+    </{{ sidebar_tag }}>
+
+    <style>
+    /* Unique CSS variables for this site */
+    :root {
+    {%- for var, value in unique_css_vars.items() %}
+        {{ var }}: {{ value }};
+    {%- endfor %}
+    }
+    </style>
 
     <!-- Mobile Sidebar Toggle -->
     <button class="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" id="mobileSidebarToggle" aria-label="Open menu">

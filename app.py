@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+from unique_generator import UniqueWebsiteGenerator
 
 class CompleteWebsiteGenerator:
     def __init__(self, openai_api_key, default_domain="spikeup.com"):
@@ -2683,9 +2684,26 @@ Return ONLY the font name exactly as it appears in Google Fonts, nothing else.""
         with open(template_filename, 'r', encoding='utf-8') as f:
             template_content = f.read()
         
+        # Always inject uniqueness helpers
+        context = dict(data)
+        if hasattr(self, "unique_classes"):
+            context["unique_classes"] = self.unique_classes
+        if hasattr(self, "unique_ids"):
+            context["unique_ids"] = self.unique_ids
+        if hasattr(self, "get_element_tag"):
+            context["get_element_tag"] = self.get_element_tag
+        if hasattr(self, "random_inline_style"):
+            context["random_inline_style"] = self.random_inline_style
+        if hasattr(self, "unique_css_vars"):
+            context["unique_css_vars"] = self.unique_css_vars
+        if hasattr(self, "randomize_image_filename"):
+            context["randomize_image_filename"] = self.randomize_image_filename
+        if hasattr(self, "get_uniqueness_seed"):
+            context["uniqueness_seed"] = self.get_uniqueness_seed()
+        
         # Render the template with data first
         template = Template(template_content)
-        html_output = template.render(**data)
+        html_output = template.render(**context)
         
         # Now inject CSS and JS into the rendered HTML
         # Find the closing </head> tag and insert CSS links before it
@@ -3234,7 +3252,7 @@ def main():
     
     try:
         # Initialize generator with dynamic whitelisted domain
-        generator = CompleteWebsiteGenerator(api_key, default_domain=domain)
+        generator = UniqueWebsiteGenerator(api_key, default_domain=domain)
         
         # Generate complete website with site_type
         result = generator.generate_complete_website(domain, site_type=site_type)
