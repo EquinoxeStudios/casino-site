@@ -67,8 +67,8 @@
             <div class="content-wrapper">
                 {% for section in about_sections %}
                 <div class="about-block">
-                    <h2>{{ section.title }}</h2>
-                    <p>{{ section.body }}</p>
+                    {{ randomize_content_html(section.title, 'h')|safe }}
+                    {{ randomize_content_html(section.body, 'p')|safe }}
                 </div>
                 {% endfor %}
             </div>

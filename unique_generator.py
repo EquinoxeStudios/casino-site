@@ -273,8 +273,38 @@ function {funcs['toggleSidebar']}() {{
     const mainWrapper = document.getElementById('{self.unique_ids["mainWrapper"]}');
     sidebar.classList.toggle('collapsed');
     mainWrapper.classList.toggle('expanded');
-    const isCollapsed = sidebar.classList.contains('collapsed');
-    localStorage.setItem('sidebar-{self.uniqueness_seed}', isCollapsed);
+    // Removed localStorage usage for compliance
+}}
+
+function {funcs['toggleMobileSidebar']}() {{
+    const sidebar = document.getElementById('{self.unique_ids["sidebar"]}');
+    const overlay = document.getElementById('{self.unique_ids["sidebarOverlay"]}');
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+}}
+
+function {funcs['closeMobileSidebar']}() {{
+    const sidebar = document.getElementById('{self.unique_ids["sidebar"]}');
+    const overlay = document.getElementById('{self.unique_ids["sidebarOverlay"]}');
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+}}
+
+function {funcs['handleImageLoad']}(img) {{
+    img.classList.remove('loading', 'error');
+    img.style.opacity = '0';
+    setTimeout(() => {{
+        img.style.transition = 'opacity 0.3s ease';
+        img.style.opacity = '1';
+    }}, 50);
+}}
+
+function {funcs['handleImageError']}(img) {{
+    img.classList.remove('loading');
+    img.classList.add('error');
+    console.warn('Image load failed:', img.src);
 }}
 """
         base_js_path = self.js_dir / "base.js"
@@ -296,6 +326,9 @@ function {funcs['toggleSidebar']}() {{
             "uniqueness_seed": self.uniqueness_seed,
             "unique_meta_tags": self.generate_unique_meta_tags(),
         })
+        # Add content randomizer to context
+        context["randomize_content_html"] = self.randomize_content_html
+
         html_output = super().render_template(template_filename, context, output_filename)
         with open(self.output_dir / output_filename, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -309,6 +342,53 @@ function {funcs['toggleSidebar']}() {{
         with open(self.output_dir / output_filename, 'w', encoding='utf-8') as f:
             f.write(content)
         return self.output_dir / output_filename
+
+    def randomize_content_html(self, text, type_hint="p"):
+        """Randomize content HTML for anti-fingerprinting"""
+        # Insert invisible Unicode chars
+        def insert_invisible(s):
+            chars = list(s)
+            for i in range(len(chars)):
+                if self.random_state.random() < 0.03:
+                    chars[i] += "\u200B"  # zero-width space
+            return "".join(chars)
+
+        # Randomize paragraph breaks
+        if type_hint == "p":
+            paras = re.split(r"\n{2,}", text)
+            tag = self.random_state.choice(["p", "div", "section"])
+            html = "".join(
+                f"<{tag}>{insert_invisible(p).replace('\n', '<br>' if self.random_state.random() < 0.5 else '<wbr>')}</{tag}>\n"
+                for p in paras if p.strip()
+            )
+            # Optionally wrap in a semantic element
+            if self.random_state.random() < 0.3:
+                wrap = self.random_state.choice(["section", "article", "aside"])
+                html = f"<{wrap}>{html}</{wrap}>"
+            return html
+
+        # Randomize headings
+        if type_hint == "h":
+            level = self.random_state.choice([1, 2, 3])
+            tag = f"h{level}"
+            return f"<{tag}>{insert_invisible(text)}</{tag}>"
+
+        # Randomize lists
+        if type_hint == "list":
+            items = [i.strip() for i in text.split("\n") if i.strip()]
+            list_type = self.random_state.choice(["ul", "ol", "dl"])
+            if list_type == "dl":
+                html = "<dl>\n" + "".join(f"<dt>{insert_invisible(i)}</dt><dd></dd>\n" for i in items) + "</dl>"
+            else:
+                html = f"<{list_type}>\n" + "".join(f"<li>{insert_invisible(i)}</li>\n" for i in items) + f"</{list_type}>"
+            # Optionally wrap in a semantic element
+            if self.random_state.random() < 0.2:
+                wrap = self.random_state.choice(["nav", "section", "aside"])
+                html = f"<{wrap}>{html}</{wrap}>"
+            return html
+
+        # Default: just insert invisible chars
+        return insert_invisible(text)
 
     def generate_robots_txt(self):
         crawl_delays = [0.5, 1, 1.5, 2, 2.5]

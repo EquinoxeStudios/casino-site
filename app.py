@@ -2235,9 +2235,9 @@ document.addEventListener('DOMContentLoaded', () => {
         # Update games with downloaded image paths
         for game in all_games:
             if game['slug'] in image_results and image_results[game['slug']]:
-                game['image'] = image_results[game['slug']]
+                game['image'] = self.randomize_image_filename(image_results[game['slug']], game['slug'])
             else:
-                game['image'] = "images/games/placeholder.jpg"
+                game['image'] = self.randomize_image_filename("images/games/placeholder.jpg", game['slug'])
             # Remove temporary image_url field
             game.pop('image_url', None)
 
@@ -2959,7 +2959,7 @@ Return ONLY a JSON array of objects with "title" and "body".
             'site_name': site_name,
             'primary_font': selected_font,
             'colors': colors,  # Now includes all required colors
-            'favicon': favicon_filename,
+            'favicon': generator.randomize_image_filename(favicon_filename, "favicon"),
             # Universal URLs for sidebar/footer (work for both site types)
             'about_url': page_link("about", "/pages/"),
             'contact_url': page_link("contact", "/pages/"),
@@ -2991,7 +2991,7 @@ Return ONLY a JSON array of objects with "title" and "body".
             'hero': {
                 'title': content['hero_title'],
                 'description': content['hero_description'],
-                'background_image': hero_image,
+                'background_image': generator.randomize_image_filename(hero_image, "hero"),
                 'overlay_opacity': 0.6,
                 'cta_text': content['cta_text'],
                 'cta_url': '/games',
