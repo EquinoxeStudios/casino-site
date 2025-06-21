@@ -1,36 +1,37 @@
-import os
-import json
-import requests
-from datetime import datetime
-from pathlib import Path
-import openai
-from jinja2 import Template
-from dotenv import load_dotenv
-import re
-import random
-import time
-from urllib.parse import urlparse
-import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
-from unique_generator import UniqueWebsiteGenerator
-
-class CompleteWebsiteGenerator:
-    def __init__(self, openai_api_key, default_domain="spikeup.com"):
-        """Initialize the complete website generator with OpenAI API key and dynamic whitelisted domain"""
-        self.client = openai.OpenAI(api_key=openai_api_key)
-        self.output_dir = Path("generated_websites")
-        self.output_dir.mkdir(exist_ok=True)
-        
-        # Create subdirectories
-        self.images_dir = self.output_dir / "images" / "games"
-        self.images_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.pages_dir = self.output_dir / "pages"
-        self.pages_dir.mkdir(exist_ok=True)
-        
-        self.games_dir = self.output_dir / "games"
-        self.games_dir.mkdir(exist_ok=True)
+base_data = {
+            'site_name': site_name,
+            'primary_font': selected_font,
+            'colors': colors,  # Now includes all required colors
+            'favicon': self.randomize_image_filename(favicon_filename, "favicon"),
+            # Universal URLs for sidebar/footer (work for both site types)
+            'about_url': page_link("about", "/pages/"),
+            'contact_url': page_link("contact", "/pages/"),
+            'terms_url': page_link("terms", "/pages/"),
+            'privacy_url': page_link("privacy", "/pages/"),
+            'cookies_url': page_link("cookies", "/pages/"),
+            'responsible_url': page_link("responsible", "/pages/"),
+            'func_names': {
+                'toggleSidebar': 'toggleSidebar',
+                'toggleMobileSidebar': 'toggleMobileSidebar',
+                'closeMobileSidebar': 'closeMobileSidebar',
+                'handleImageError': 'handleImageError',
+                'handleImageLoad': 'handleImageLoad',
+                'trackGameClick': 'trackGameClick'
+            },
+            'footer': {
+                'disclaimer': {
+                    'title': 'Disclaimer (18+ / Play Responsibly)',
+                    'text': (
+                        "This free‑to‑play social‑casino site is intended for persons aged 18 years and older (or the legal gambling age in your jurisdiction).\n"
+                        "• No real‑money gambling: all games use virtual currency only and do not offer prizes of real‑world value.\n"
+                        "• Optional in‑app purchases of virtual coins may be available.\n"
+                        "• Success at social‑casino games does not imply future success at real‑money gambling.\n"
+                        "If you or someone you know has a gambling problem, please seek help at www.begambleaware.org or call 1‑800‑522‑4700."
+                    )
+                },
+                'copyright_year': datetime.now().year,
+                'domain_name': domain_name
+            }
         
         # Create assets directories
         self.css_dir = self.output_dir / "assets" / "css"
@@ -2101,13 +2102,13 @@ document.addEventListener('DOMContentLoaded', () => {
             else:
                 self.log_debug(f"No URL in response for {game_id}")
                 # Fallback to direct embed URL with token
-                fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}"
+                fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}&domain={domain}"
                 self.log_debug(f"Using fallback embed URL: {fallback_url}")
                 return fallback_url
         else:
             self.log_debug(f"Failed to get game URL for {game_id}: {response.status_code}")
             # Fallback to direct embed URL with token
-            fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}"
+            fallback_url = f"https://slotslaunch.com/iframe/{game_id}?token={self.slotslaunch_token}&domain={domain}"
             self.log_debug(f"Using fallback embed URL: {fallback_url}")
             return fallback_url
     
@@ -2814,48 +2815,37 @@ Return ONLY a JSON array of objects with "title" and "body".
         """Get CSS includes based on the page type"""
         # Determine the path prefix based on file location
         # Always use absolute paths for assets to ensure correct loading from any directory depth
-        path_prefix = '/'
-        
+        # Always use absolute paths for assets
         includes = [f'    <link rel="stylesheet" href="/assets/css/base.css">']
         
         # Add page-specific CSS based on filename
-        # Add homepage CSS for homepage files
         if (
             'homepage' in filename
             or filename == "index.html"
             or filename == "index.php"
         ):
-            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/homepage.css">')
-        # Games listing page (games.html or games/index.php)
+            includes.append('    <link rel="stylesheet" href="/assets/css/homepage.css">')
         elif filename == "games.html" or filename == "games/index.php":
-            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/games.css">')
-        # Individual game pages (games/slug.html or games/slug/index.php)
+            includes.append('    <link rel="stylesheet" href="/assets/css/games.css">')
         elif filename.startswith('games/'):
-            # Only include game.css if not the games index page
             if filename != "games/index.php":
-                includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/game.css">')
+                includes.append('    <link rel="stylesheet" href="/assets/css/game.css">')
         elif any(page in filename for page in ['terms', 'privacy', 'cookies', 'responsible', 'about', 'contact']):
-            includes.append(f'    <link rel="stylesheet" href="{path_prefix}assets/css/legal.css">')
+            includes.append('    <link rel="stylesheet" href="/assets/css/legal.css">')
         
         return '\n'.join(includes)
 
     def _get_body_scripts(self, filename):
         """Get JS includes based on the page type"""
         # Determine the path prefix based on file location
-        if filename.startswith('pages/'):
-            path_prefix = '../'
-        elif filename.startswith('games/'):
-            path_prefix = '../'
-        else:
-            path_prefix = ''
-        
+        # Always use absolute paths for assets
         scripts = [f'    <script src="/assets/js/base.js"></script>']
         
         # Add page-specific JS based on filename
         if 'homepage' in filename:
-            scripts.append(f'    <script src="/assets/js/homepage.js"></script>')
+            scripts.append('    <script src="/assets/js/homepage.js"></script>')
         elif filename.startswith('games/'):
-            scripts.append(f'    <script src="/assets/js/game.js"></script>')
+            scripts.append('    <script src="/assets/js/game.js"></script>')
         
         return '\n'.join(scripts)
 
@@ -2956,28 +2946,16 @@ Return ONLY a JSON array of objects with "title" and "body".
         
         # Step 8: Prepare common template data
         base_data = {
-            'site_name': site_name,
-            'primary_font': selected_font,
-            'colors': colors,  # Now includes all required colors
-            'favicon': self.randomize_image_filename(favicon_filename, "favicon"),
-            # Universal URLs for sidebar/footer (work for both site types)
-            'about_url': page_link("about", "/pages/"),
-            'contact_url': page_link("contact", "/pages/"),
-            'terms_url': page_link("terms", "/pages/"),
-            'privacy_url': page_link("privacy", "/pages/"),
-            'cookies_url': page_link("cookies", "/pages/"),
-            'responsible_url': page_link("responsible", "/pages/"),
-            'footer': {
-                'disclaimer': {
-                    'title': 'Disclaimer (18+ / Play Responsibly)',
-                    'text': (
-                        "This free‑to‑play social‑casino site is intended for persons aged 18 years and older (or the legal gambling age in your jurisdiction).\n"
-                        "• No real‑money gambling: all games use virtual currency only and do not offer prizes of real‑world value.\n"
-                        "• Optional in‑app purchases of virtual coins may be available.\n"
-                        "• Success at social‑casino games does not imply future success at real‑money gambling.\n"
-                        "If you or someone you know has a gambling problem, please seek help at www.begambleaware.org or call 1‑800‑522‑4700."
-                    )
-                },
+\1,
+    'func_names': {
+        'toggleSidebar': 'toggleSidebar',
+        'toggleMobileSidebar': 'toggleMobileSidebar',
+        'closeMobileSidebar': 'closeMobileSidebar',
+        'handleImageError': 'handleImageError',
+        'handleImageLoad': 'handleImageLoad',
+        'trackGameClick': 'trackGameClick'
+    }
+},
                 'copyright_year': datetime.now().year,
                 'domain_name': domain_name
             }

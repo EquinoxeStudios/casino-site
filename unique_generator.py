@@ -333,6 +333,7 @@ function {funcs['closeMobileSidebar']}() {{
 
 function {funcs['handleImageLoad']}(img) {{
     img.classList.remove('loading', 'error');
+    // Add loading success animation
     img.style.opacity = '0';
     setTimeout(() => {{
         img.style.transition = 'opacity 0.3s ease';
@@ -343,7 +344,16 @@ function {funcs['handleImageLoad']}(img) {{
 function {funcs['handleImageError']}(img) {{
     img.classList.remove('loading');
     img.classList.add('error');
-    console.warn('Image load failed:', img.src);
+    // Try to load a fallback image based on game type
+    if (!img.dataset.fallbackAttempted) {{
+        img.dataset.fallbackAttempted = 'true';
+        // Generate a fallback image URL
+        const gameTitle = img.alt || 'Slot Game';
+        // fallbackUrl logic could be added here
+    }}
+    // If fallback also fails, show styled error state
+    img.style.display = 'flex';
+    // Optionally add more error UI here
 }}
 """
         # No-op for compatibility with templates
@@ -371,8 +381,8 @@ function {funcs['handleImageError']}(img) {{
         context["randomize_content_html"] = self.randomize_content_html
         context["add_dom_depth_variation"] = self.add_dom_depth_variation
 
-        html_output = super().render_template(template_filename, context, output_filename)
-        with open(self.output_dir / output_filename, 'r', encoding='utf-8') as f:
+        output_path = super().render_template(template_filename, context, output_filename)
+        with open(output_path, 'r', encoding='utf-8') as f:
             content = f.read()
         content = self.inject_random_comments(content)
         body_attrs = [
