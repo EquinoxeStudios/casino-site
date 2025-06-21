@@ -264,6 +264,37 @@ body {{
     transition: transform {transition_speed} ease;
     z-index: {self.random_state.randint(1000, 1500)};
 }}
+
+.{classes['mobile-sidebar-toggle']} {{
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    font-size: 1.5rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}}
+
+.{classes['sidebar-overlay']} {{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1500;
+    backdrop-filter: blur(2px);
+}}
 """
         base_css_path = self.css_dir / "base.css"
         with open(base_css_path, 'w', encoding='utf-8') as f:
